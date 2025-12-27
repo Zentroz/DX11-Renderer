@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Renderer\Core\GraphicsDeviceInterface.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\Math.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\PipelineStateContainer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\RenderContextInterface.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\RenderItem.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\RenderTargetInterface.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\Resource.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\ResourceHandles.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\ResourceProviderInterface.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Renderer.h" />
+    <ClInclude Include="src\Renderer\Core\Camera.h" />
+    <ClInclude Include="src\Renderer\Core\RenderPassInterface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Renderer\Core\Camera.cpp" />
+  </ItemGroup>
+</Project>

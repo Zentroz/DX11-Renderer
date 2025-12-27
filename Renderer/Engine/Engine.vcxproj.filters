@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{594615A9-C525-9444-CE3D-1F1B3A9CFAA5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Window">
+      <UniqueIdentifier>{3DEA79DA-298C-A4B0-1247-B804FE872B01}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Utility\FreelookCamera.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Window\ChiliWin.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Window\Window.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="externals\stb\stb_image\stb_image.h" />
+    <ClInclude Include="src\Utility\AssetLoader.h" />
+    <ClInclude Include="src\Editor\UI.h" />
+    <ClInclude Include="src\Editor\ObjectPanel.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\WinMain.cpp" />
+    <ClCompile Include="src\Window\Window.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\stb\stb_image\stb_image.cpp" />
+    <ClCompile Include="src\Utility\AssetLoader.cpp" />
+    <ClCompile Include="src\Editor\UI.cpp" />
+    <ClCompile Include="src\Editor\ObjectPanel.cpp" />
+    <ClCompile Include="src\Utility\FreeLookCamera.cpp" />
+  </ItemGroup>
+</Project>

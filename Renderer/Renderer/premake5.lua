@@ -1,5 +1,5 @@
 project "Renderer"
-   kind "ConsoleApp"
+   kind "StaticLib"
    language "C++"
    cppdialect "C++20"
 
@@ -12,21 +12,13 @@ project "Renderer"
    }
 
    includedirs {
-       "src"
+       "src/Renderer"
    }
 
    filter "configurations:Debug"
-      defines { "DEBUG" }
-      symbols "On"
+      runtime "Debug"
+      staticruntime "off"
 
    filter "configurations:Release"
-      defines { "NDEBUG" }
-      optimize "On"
-
-   -- filter "configurations:Debug"
-   --      runtime "Debug"        -- MDd
-   --      staticruntime "off"
-   -- 
-   -- filter "configurations:Release"
-   --      runtime "Release"      -- MD
-   --      staticruntime "off"
+      runtime "Release"
+      staticruntime "off"
