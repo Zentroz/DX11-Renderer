@@ -1,6 +1,6 @@
 #pragma once
 
-#include"ResourceHandles.h"
+#include"Renderer/Core/Handles.h"
 
 namespace zRender {
 
@@ -39,15 +39,24 @@ namespace zRender {
         RasterizerFunc_CullMode_Front,
         RasterizerFunc_CullMode_Back,
     };
+    enum DepthWriteMask {
+        DepthWriteMask_All,
+        DepthWriteMask_Zero
+    };
+    enum DepthFunc {
+        DepthFunc_Always,
+        DepthFunc_Never,
+        DepthFunc_LessEqual
+    };
     
     class IRenderResourceProvider
     {
     public:
         virtual ~IRenderResourceProvider() = default;
 
-        virtual Handle CreateBuffer(Buffer_Usage usage, int accessFlag, uint32_t byteWidth, void* initData) = 0;
-        virtual Handle GetRasteriserHandle(RasterizerCullMode cullMode, RasterizerFillMode fillMode) = 0;
-        //virtual Handle GetDepthStencilHandle() = 0;
+        virtual BufferHandle CreateBuffer(Buffer_Usage usage, int accessFlag, uint32_t byteWidth, void* initData) = 0;
+        virtual RasterizerHandle GetRasteriserHandle(RasterizerCullMode cullMode, RasterizerFillMode fillMode) = 0;
+        virtual DepthStateHandle GetDepthStateHandle(DepthWriteMask write, DepthFunc func) = 0;
     };
 
 }

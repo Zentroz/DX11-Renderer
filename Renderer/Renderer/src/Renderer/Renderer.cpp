@@ -49,25 +49,25 @@ namespace zRender {
 		skyboxBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(SkyboxData), &sbData);
 
 		PipelineStateContainer pbrOpaque;
-		pbrOpaque.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+		pbrOpaque.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_Back, RasterizerFunc_FillMode_Solid);
+		pbrOpaque.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_All, DepthFunc_LessEqual);
 		pbrOpaque.topology = PrimitiveTopology_Triangelist;
-		pbrOpaque.depthStencilHandle = 1;
 		m_PipelineStates[PipelineStateType_PBR_Opaque] = pbrOpaque;
 
 		PipelineStateContainer skybox;
-		skybox.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_Front, RasterizerFunc_FillMode_Solid);
+		skybox.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+		skybox.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_LessEqual);
 		skybox.topology = PrimitiveTopology_Triangelist;
-		skybox.depthStencilHandle = 1;
 		m_PipelineStates[PipelineStateType_Skybox] = skybox;
 	}
 
 	void Renderer::SetCamera(Camera& cam) {
 		renderCamera = cam;
 	}
-	void Renderer::SetSkybox(Handle textureHandle) {
+	void Renderer::SetSkybox(TextureHandle textureHandle) {
 		skyboxTextureHandle = textureHandle;
 	}
-	void Renderer::SetPipelineShader(PipelineStateType pipelineStateType, Handle shaderHandle) {
+	void Renderer::SetPipelineShader(PipelineStateType pipelineStateType, TextureHandle shaderHandle) {
 		m_PipelineStates[pipelineStateType].shaderHandle = shaderHandle;
 	}
 
@@ -84,8 +84,8 @@ namespace zRender {
 	}
 
 	void Renderer::Render() {
-		RenderOpaque();
 		RenderSkybox();
+		RenderOpaque();
 	}
 	void Renderer::EndRender() {
 		m_RenderQueue.clear();
@@ -98,7 +98,8 @@ namespace zRender {
 		m_RenderContext->BindBufferVS(1, frameBufferHandle);
 		m_RenderContext->BindBufferPS(1, frameBufferHandle);
 
-		m_RenderContext->BindPipeline(GetPipelineState(PipelineStateType_PBR_Opaque));
+		const PipelineStateContainer pipeline = GetPipelineState(PipelineStateType_PBR_Opaque);
+		m_RenderContext->BindPipeline(pipeline);
 		for (const auto& item : m_RenderQueue) {
 			ObjectData objectData;
 			objectData.modelMatrix = DirectX::XMMatrixTranspose(item.modelMatrix);
@@ -120,14 +121,17 @@ namespace zRender {
 	}
 	void Renderer::RenderSkybox() {
 		SkyboxData sbData;
-		sbData.view = renderCamera.ViewMatrix();
-		sbData.proj = renderCamera.ProjMatrix();
+		//sbData.model = ;
+		
+		sbData.view = DirectX::XMMatrixTranspose(renderCamera.ViewMatrix());
+		sbData.proj = DirectX::XMMatrixTranspose(renderCamera.ProjMatrix());
 		m_RenderContext->UpdateBuffer(skyboxBufferHandle, sizeof(SkyboxData), &sbData);
 
 		m_RenderContext->BindPipeline(GetPipelineState(PipelineStateType_Skybox));
 		m_RenderContext->BindBufferVS(0, skyboxBufferHandle);
 		m_RenderContext->BindTexturePS(0, skyboxTextureHandle);
-		m_RenderContext->DrawGeometryIndexed(2);
+		MeshHandle cube = 2;
+		m_RenderContext->DrawGeometryIndexed(cube);
 	}
 
 	void Renderer::Queue(RenderItem item) {

@@ -2,7 +2,7 @@
 
 #include<string>
 
-#include"ResourceHandles.h"
+#include"Renderer/Core/Handles.h"
 
 namespace zRender {
     enum PipelineStateType {
@@ -13,11 +13,11 @@ namespace zRender {
     public:
         std::string name;
 
-        Handle shaderHandle;
+        ShaderHandle shaderHandle;
 
-        Handle rasterizerHandle;
-        Handle depthStencilHandle;
-        Handle blendHandle;
+        RasterizerHandle rasterizerHandle;
+        DepthStateHandle depthStencilHandle;
+        uint32_t blendHandle;
 
         PrimitiveTopology topology;
     };

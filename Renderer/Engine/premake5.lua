@@ -14,7 +14,6 @@ project "Engine"
    includedirs {
        "src",
        "%{wks.location}/Renderer/src",
-       "%{wks.location}/D3D11Engine/src",
        "externals/assimp/include",
        "externals/stb",
        "externals/imgui/include"
@@ -22,7 +21,6 @@ project "Engine"
 
    links {
        "Renderer",
-       "D3D11Engine",
        "ImGui"
    }
 

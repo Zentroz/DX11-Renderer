@@ -1,8 +1,8 @@
 #pragma once
 
 #include<DirectXMath.h>
-#include"ResourceHandles.h"
-#include"Math.h"
+#include"Renderer/Core/Handles.h"
+#include"Renderer/Core/Math.h"
 
 /// <summary>
 /// Flags to enable rendering settings.
@@ -18,17 +18,17 @@ namespace zRender {
 		float shininess;
 		float roughness;
 		float metallic;
-		Handle diffuseTexHandle = InvalidHandle;
-		Handle normalTexHandle = InvalidHandle;
+		TextureHandle diffuseTexHandle = InvalidHandle;
+		TextureHandle normalTexHandle = InvalidHandle;
 	};
 
 	/// <summary>
 	/// Item to be rendered.
 	/// </summary>
 	struct RenderItem {
-		Handle textureHandle;
-		Handle meshHandle;
-		Handle shaderHandle;
+		TextureHandle textureHandle;
+		MeshHandle meshHandle;
+		ShaderHandle shaderHandle;
 		Material material;
 		DirectX::XMMATRIX modelMatrix;
 		int flags;

@@ -2,11 +2,11 @@
 
 #include<vector>
 
-#include"Core/RenderItem.h"
-#include"Core/RenderContextInterface.h"
-#include"Core/ResourceProviderInterface.h"
-#include"Core/Math.h"
-#include"Core/Camera.h"
+#include"Renderer/Core/Math.h"
+#include"Renderer/Render/RenderItem.h"
+#include"Renderer/Render/RenderContextInterface.h"
+#include"Renderer/Render/ResourceProviderInterface.h"
+#include"Renderer/Render/Camera.h"
 
 namespace zRender {
 
@@ -42,6 +42,7 @@ namespace zRender {
 		Light lights[32];
 	};
 	__declspec(align(16)) struct SkyboxData {
+		//DirectX::XMMATRIX model;
 		DirectX::XMMATRIX view;
 		DirectX::XMMATRIX proj;
 	};
@@ -66,8 +67,8 @@ namespace zRender {
 
 		void Setup(IRenderContext* renderContext, IRenderResourceProvider* resourceProvider);
 		void SetCamera(Camera& cam);
-		void SetSkybox(Handle textureHandle);
-		void SetPipelineShader(PipelineStateType pipelineStateType, Handle shaderHandle);
+		void SetSkybox(TextureHandle textureHandle);
+		void SetPipelineShader(PipelineStateType pipelineStateType, TextureHandle shaderHandle);
 		void AddLight(Light light);
 
 		void RenderOpaque();
@@ -84,16 +85,16 @@ namespace zRender {
 		PipelineStateContainer m_PipelineStates[8];
 
 		// Constant Buffers
-		Handle staticBufferHandle = InvalidHandle;
-		Handle frameBufferHandle = InvalidHandle;
-		Handle objectBufferHandle = InvalidHandle;
-		Handle materialBufferHandle = InvalidHandle;
-		Handle skyboxBufferHandle = InvalidHandle;
+		BufferHandle staticBufferHandle = InvalidHandle;
+		BufferHandle frameBufferHandle = InvalidHandle;
+		BufferHandle objectBufferHandle = InvalidHandle;
+		BufferHandle materialBufferHandle = InvalidHandle;
+		BufferHandle skyboxBufferHandle = InvalidHandle;
 
 		Camera renderCamera;
 		Light m_Lights[32];
 		int lightCount;
-		Handle skyboxTextureHandle = InvalidHandle;
+		TextureHandle skyboxTextureHandle = InvalidHandle;
 		float check = 1.0f;
 	private:
 		PipelineStateContainer& GetPipelineState(PipelineStateType state);

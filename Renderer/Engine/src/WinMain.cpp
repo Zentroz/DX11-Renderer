@@ -1,12 +1,12 @@
 #include"Window/Window.h"
-#include"D3D11Engine/GraphicsDevice.h"
-#include"D3D11Engine/RenderContext.h"
 #include"Utility/FreelookCamera.h"
 #include"Utility/AssetLoader.h"
 #include"Editor/UI.h"
 #include"Editor/ObjectPanel.h"
 
-#include<stdexcept>
+#include<Renderer/D3D11/GraphicsDevice.h>
+#include<Renderer/D3D11/RenderContext.h>
+#include<Renderer/D3D11/ResourceProvider.h>
 #include<Renderer/Renderer.h>
 
 #include <assimp/Importer.hpp>
@@ -14,10 +14,11 @@
 #include <assimp/postprocess.h>
 
 #include<stb_image/stb_image.h>
+#include<imgui/imgui.h>
 
+#include<stdexcept>
 #include <cstdio>
 
-#include<imgui/imgui.h>
 
 void CreateConsole()
 {
@@ -31,10 +32,10 @@ void CreateConsole()
 	SetConsoleTitle(L"DX11 Debug Console");
 }
 
+using namespace zRender;
+
 void PopulateCubeMesh(MeshCPU& mesh);
 MeshCPU GenerateSphere(MeshCPU& mesh, float radius, uint32_t slices, uint32_t stacks);
-
-using namespace zRender;
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PWSTR pCmdLine, _In_ int nCmdShow) {
 	CreateConsole();
@@ -63,28 +64,29 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 	ShaderCPU shader;
 	shader.inputLayout = InputLayout_PNTT;
 	ShaderCPU skyboxShader;
-	skyboxShader.inputLayout = InputLayout_P;
+	skyboxShader.inputLayout = InputLayout_PNTT;
 	shaderLoader.Load(shader, "Assets/Shaders/pbr.hlsl");
 	shaderLoader.Load(skyboxShader, "Assets/Shaders/skybox.hlsl");
-	Handle shaderH = resourceProvider.LoadShader(shader);
-	Handle skyboxShaderH = resourceProvider.LoadShader(skyboxShader);
+	ShaderHandle shaderH = resourceProvider.LoadShader(shader);
+	ShaderHandle skyboxShaderH = resourceProvider.LoadShader(skyboxShader);
 
 	textureLoader.FlipImage();
 	TextureCPU texture;
 	TextureCPU normalMap;
-
-	TextureCPU skyboxTextures[6]{};
 	textureLoader.Load(texture, "Assets/sand.png");
 	textureLoader.Load(normalMap, "Assets/sand_normal.png");
+
+	TextureCPU skyboxTextures[6]{};
 	textureLoader.Load(skyboxTextures[0], "Assets/Skybox/Sides/px.jpg");
 	textureLoader.Load(skyboxTextures[1], "Assets/Skybox/Sides/nx.jpg");
 	textureLoader.Load(skyboxTextures[2], "Assets/Skybox/Sides/py.jpg");
 	textureLoader.Load(skyboxTextures[3], "Assets/Skybox/Sides/ny.jpg");
 	textureLoader.Load(skyboxTextures[4], "Assets/Skybox/Sides/pz.jpg");
 	textureLoader.Load(skyboxTextures[5], "Assets/Skybox/Sides/nz.jpg");
+	TextureHandle skyboxHandle = resourceProvider.LoadTextureCubeMap(skyboxTextures);
 
 	renderer.Setup(&renderContext, &resourceProvider);
-	renderer.SetSkybox(resourceProvider.LoadTextureCubeMap(skyboxTextures));
+	renderer.SetSkybox(skyboxHandle);
 	renderer.SetPipelineShader(zRender::PipelineStateType_PBR_Opaque, shaderH);
 	renderer.SetPipelineShader(zRender::PipelineStateType_Skybox, skyboxShaderH);
 
@@ -149,8 +151,8 @@ void PopulateCubeMesh(MeshCPU& mesh) {
 
 	// Front face (+Z)
 	{
-		float3 n = { 0, 0, 1 };
-		float3 t = { 1, 0, 0 };
+		vec3 n = { 0, 0, 1 };
+		vec3 t = { 1, 0, 0 };
 
 		mesh.vertices.push_back({ {-0.5f,-0.5f, 0.5f}, n, t, {0,0} });
 		mesh.vertices.push_back({ { 0.5f,-0.5f, 0.5f}, n, t, {1,0} });
@@ -162,8 +164,8 @@ void PopulateCubeMesh(MeshCPU& mesh) {
 
 	// Back face (-Z)
 	{
-		float3 n = { 0, 0, -1 };
-		float3 t = { -1, 0, 0 };
+		vec3 n = { 0, 0, -1 };
+		vec3 t = { -1, 0, 0 };
 
 		mesh.vertices.push_back({ { 0.5f,-0.5f,-0.5f}, n, t, {0,0} });
 		mesh.vertices.push_back({ {-0.5f,-0.5f,-0.5f}, n, t, {1,0} });
@@ -175,8 +177,8 @@ void PopulateCubeMesh(MeshCPU& mesh) {
 
 	// Right face (+X)
 	{
-		float3 n = { 1, 0, 0 };
-		float3 t = { 0, 0, -1 };
+		vec3 n = { 1, 0, 0 };
+		vec3 t = { 0, 0, -1 };
 
 		mesh.vertices.push_back({ { 0.5f,-0.5f, 0.5f}, n, t, {0,0} });
 		mesh.vertices.push_back({ { 0.5f,-0.5f,-0.5f}, n, t, {1,0} });
@@ -188,8 +190,8 @@ void PopulateCubeMesh(MeshCPU& mesh) {
 
 	// Left face (-X)
 	{
-		float3 n = { -1, 0, 0 };
-		float3 t = { 0, 0, 1 };
+		vec3 n = { -1, 0, 0 };
+		vec3 t = { 0, 0, 1 };
 
 		mesh.vertices.push_back({ {-0.5f,-0.5f,-0.5f}, n, t, {0,0} });
 		mesh.vertices.push_back({ {-0.5f,-0.5f, 0.5f}, n, t, {1,0} });
@@ -201,8 +203,8 @@ void PopulateCubeMesh(MeshCPU& mesh) {
 
 	// Top face (+Y)
 	{
-		float3 n = { 0, 1, 0 };
-		float3 t = { 1, 0, 0 };
+		vec3 n = { 0, 1, 0 };
+		vec3 t = { 1, 0, 0 };
 
 		mesh.vertices.push_back({ {-0.5f, 0.5f, 0.5f}, n, t, {0,0} });
 		mesh.vertices.push_back({ { 0.5f, 0.5f, 0.5f}, n, t, {1,0} });
@@ -214,8 +216,8 @@ void PopulateCubeMesh(MeshCPU& mesh) {
 
 	// Bottom face (-Y)
 	{
-		float3 n = { 0, -1, 0 };
-		float3 t = { 1, 0, 0 };
+		vec3 n = { 0, -1, 0 };
+		vec3 t = { 1, 0, 0 };
 
 		mesh.vertices.push_back({ {-0.5f,-0.5f,-0.5f}, n, t, {0,0} });
 		mesh.vertices.push_back({ { 0.5f,-0.5f,-0.5f}, n, t, {1,0} });
@@ -256,24 +258,24 @@ MeshCPU GenerateSphere(MeshCPU& mesh, float radius, uint32_t slices, uint32_t st
 			Vertex vertex;
 
 			// Position
-			vertex.position = float3{
+			vertex.position = vec3{
 				x * radius,
 				y * radius,
 				z * radius
 			};
 
 			// Normal
-			vertex.normal = float3{ x, y, z };
+			vertex.normal = vec3{ x, y, z };
 
 			// Tangent (direction of increasing U / theta)
-			vertex.tangent = float3{
+			vertex.tangent = vec3{
 				-std::sin(theta),
 				0.0f,
 				std::cos(theta)
 			};
 
 			// UV
-			vertex.uv = float2{ u, 1.0f - v };
+			vertex.uv = vec2{ u, 1.0f - v };
 
 			mesh.vertices.push_back(vertex);
 		}

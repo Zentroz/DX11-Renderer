@@ -14,7 +14,6 @@ workspace "DX11-Renderer"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 include"Renderer"
-include"D3D11Engine"
 include"Engine"
 
 group "Externals"

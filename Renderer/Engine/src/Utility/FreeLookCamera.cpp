@@ -11,6 +11,7 @@ constexpr float DEG2RAD = 3.14159265 / 180.0f;
 
 FreelookCamera::FreelookCamera() : pitch(0), yaw(0) {
 	m_Camera.aspectRatio = 1536.0f / 793.0f;
+	m_Camera.nearPlane = 0.001f;
 }
 
 void FreelookCamera::Update() {

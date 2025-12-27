@@ -2,7 +2,7 @@
 
 #include<DirectXMath.h>
 
-#include"Math.h"
+#include"Renderer/Core/Math.h"
 
 namespace zRender {
 	struct Camera {

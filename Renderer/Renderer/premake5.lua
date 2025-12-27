@@ -12,7 +12,7 @@ project "Renderer"
    }
 
    includedirs {
-       "src/Renderer"
+       "src"
    }
 
    filter "configurations:Debug"

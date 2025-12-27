@@ -57,7 +57,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;..\Renderer\src;..\D3D11Engine\src;externals\assimp\include;externals\stb;externals\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\Renderer\src;externals\assimp\include;externals\stb;externals\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -73,7 +73,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;..\Renderer\src;..\D3D11Engine\src;externals\assimp\include;externals\stb;externals\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\Renderer\src;externals\assimp\include;externals\stb;externals\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -105,9 +105,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Renderer\Renderer.vcxproj">
       <Project>{7CCE658F-689B-C09A-91B4-AE427DE0F528}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\D3D11Engine\D3D11Engine.vcxproj">
-      <Project>{18FEA6B4-84B3-1FAA-0DA8-1981795C16AE}</Project>
     </ProjectReference>
     <ProjectReference Include="externals\imgui\ImGui.vcxproj">
       <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>

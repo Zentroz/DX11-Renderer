@@ -1,7 +1,7 @@
 #pragma once
 
 #include<Renderer/Core/Math.h>
-#include<Renderer/Core/Camera.h>
+#include<Renderer/Render/Camera.h>
 
 class FreelookCamera {
 public:

@@ -4,41 +4,77 @@
     <Filter Include="Core">
       <UniqueIdentifier>{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="D3D11">
+      <UniqueIdentifier>{82A1EA0C-EEB5-12BE-B737-B61D230B0FEF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render">
+      <UniqueIdentifier>{C5BB87CE-B15D-B2A4-9A18-C6F8865939F5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Renderer\Core\GraphicsDeviceInterface.h">
+    <ClInclude Include="src\Renderer\Core\Handles.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\Core\Math.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\PipelineStateContainer.h">
+    <ClInclude Include="src\Renderer\Core\ResourceGPU.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\RenderContextInterface.h">
+    <ClInclude Include="src\Renderer\Core\ResourcesCPU.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\RenderItem.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Renderer\D3D11\D3D11Resources.h">
+      <Filter>D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\RenderTargetInterface.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Renderer\D3D11\GraphicsDevice.h">
+      <Filter>D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\Resource.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Renderer\D3D11\RenderContext.h">
+      <Filter>D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\ResourceHandles.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Renderer\D3D11\ResourceProvider.h">
+      <Filter>D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\ResourceProviderInterface.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Renderer\Render\Camera.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Render\GraphicsDeviceInterface.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Render\PipelineStateContainer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Render\RenderContextInterface.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Render\RenderItem.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Render\RenderPassInterface.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Render\RenderTargetInterface.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Render\ResourceProviderInterface.h">
+      <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\Renderer.h" />
-    <ClInclude Include="src\Renderer\Core\Camera.h" />
-    <ClInclude Include="src\Renderer\Core\RenderPassInterface.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp">
+      <Filter>D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\D3D11\RenderContext.cpp">
+      <Filter>D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\D3D11\ResourceProvider.cpp">
+      <Filter>D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\Render\Camera.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
     <ClCompile Include="src\Renderer\Renderer.cpp" />
-    <ClCompile Include="src\Renderer\Core\Camera.cpp" />
   </ItemGroup>
 </Project>

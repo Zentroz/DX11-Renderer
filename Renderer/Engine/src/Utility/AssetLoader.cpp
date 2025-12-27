@@ -6,19 +6,19 @@
 #include <sstream>
 #include <string>
 
-bool MeshLoader::Load(MeshCPU& mesh, const std::string& path) {
+bool MeshLoader::Load(zRender::MeshCPU& mesh, const std::string& path) {
 	return true;
 }
 
 void TextureLoader::FlipImage(bool flip) {
 	stbi_set_flip_vertically_on_load(flip);
 }
-bool TextureLoader::Load(TextureCPU& texture, const std::string& path) {
+bool TextureLoader::Load(zRender::TextureCPU& texture, const std::string& path) {
 	texture.pixels = stbi_load(path.c_str(), &texture.width, &texture.height, &texture.channels, 4);
 	return true;
 }
 
-bool ShaderLoader::Load(ShaderCPU& shader, const std::string& path) {
+bool ShaderLoader::Load(zRender::ShaderCPU& shader, const std::string& path) {
 	std::ifstream file(path);
 	std::string file_contents;
 

@@ -55,7 +55,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src\Renderer;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -69,7 +69,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src\Renderer;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -80,21 +80,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Renderer\Core\Camera.h" />
-    <ClInclude Include="src\Renderer\Core\GraphicsDeviceInterface.h" />
+    <ClInclude Include="src\Renderer\Core\Handles.h" />
     <ClInclude Include="src\Renderer\Core\Math.h" />
-    <ClInclude Include="src\Renderer\Core\PipelineStateContainer.h" />
-    <ClInclude Include="src\Renderer\Core\RenderContextInterface.h" />
-    <ClInclude Include="src\Renderer\Core\RenderItem.h" />
-    <ClInclude Include="src\Renderer\Core\RenderPassInterface.h" />
-    <ClInclude Include="src\Renderer\Core\RenderTargetInterface.h" />
-    <ClInclude Include="src\Renderer\Core\Resource.h" />
-    <ClInclude Include="src\Renderer\Core\ResourceHandles.h" />
-    <ClInclude Include="src\Renderer\Core\ResourceProviderInterface.h" />
+    <ClInclude Include="src\Renderer\Core\ResourceGPU.h" />
+    <ClInclude Include="src\Renderer\Core\ResourcesCPU.h" />
+    <ClInclude Include="src\Renderer\D3D11\D3D11Resources.h" />
+    <ClInclude Include="src\Renderer\D3D11\GraphicsDevice.h" />
+    <ClInclude Include="src\Renderer\D3D11\RenderContext.h" />
+    <ClInclude Include="src\Renderer\D3D11\ResourceProvider.h" />
+    <ClInclude Include="src\Renderer\Render\Camera.h" />
+    <ClInclude Include="src\Renderer\Render\GraphicsDeviceInterface.h" />
+    <ClInclude Include="src\Renderer\Render\PipelineStateContainer.h" />
+    <ClInclude Include="src\Renderer\Render\RenderContextInterface.h" />
+    <ClInclude Include="src\Renderer\Render\RenderItem.h" />
+    <ClInclude Include="src\Renderer\Render\RenderPassInterface.h" />
+    <ClInclude Include="src\Renderer\Render\RenderTargetInterface.h" />
+    <ClInclude Include="src\Renderer\Render\ResourceProviderInterface.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Renderer\Core\Camera.cpp" />
+    <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp" />
+    <ClCompile Include="src\Renderer\D3D11\RenderContext.cpp" />
+    <ClCompile Include="src\Renderer\D3D11\ResourceProvider.cpp" />
+    <ClCompile Include="src\Renderer\Render\Camera.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
