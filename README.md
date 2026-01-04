@@ -1,37 +1,63 @@
 # DX11-Renderer
-A small real-time renderer built using DirectX 11 to demonstrate core graphics pipeline concepts such as rasterization, shaders, constant buffers, and basic lighting.
+A small real-time renderer built using DirectX 11 to explore and implement modern rendering techniques such as deferred rendering, lighting models, and GPU resource management.
+
 
 ## Features
+### Core
 * DirectX 11 rendering pipeline setup
-* Mesh loading (OBJ, FBX)
 * Camera movement (WASD + mouse)
-* Normal & Shadow Mapping
+* Mesh loading (OBJ, FBX via Assimp)
+* Vertex & pixel shaders (HLSL)
+* Constant buffer–based CPU ↔ GPU communication
+
+### Rendering Techniques
+* Deferred rendering pipeline
+* Normal mapping
+* Shadow mapping
 * Transparent mesh rendering
-* Deferred Rendering pipeline and Render Graph
-* Multiple light support such as point, spot and directional lights
-* Basic Phong / Blinn-Phong lighting / Physical Based Rendering (PBR)
-* Abstract Renderer architecture that supports the implementation of other Graphics API's
-* Interactalbe editor to inspect, change material properties and load scenes from mesh formats. For example FBX, OBJ etc.
+* Multiple light types (directional, point, spot)
+
+### Lighting Models
+* Phong / Blinn-Phong lighting
+* Basic Physically Based Rendering (metallic–roughness workflow)
+
+### Tools & Architecture
+* Simple render graph to organize render passes
+* Abstract renderer layer designed to allow other graphics APIs
+* Interactive editor for inspecting scenes and modifying material properties
+
+## Technical Overview
+The renderer initializes a DirectX 11 device, swap chain, and render targets.
+A deferred rendering approach is used, where geometry data is written to G-buffers and lighting is computed in a separate pass.
+
+Per-frame and per-object data are uploaded using constant buffers.
+Materials support both traditional lighting and a simplified PBR workflow using metallic and roughness parameters.
+
+Render passes are organized through a lightweight render graph to control execution order and resource dependencies.
 
 ## Concepts Learned
-* Clean and scalable architecture
-* How transparent objects are rendererd.
-* How CPU & GPU share information thorugh buffers
-* The purpose and use of Tangent - Bitangent - Normal (TBN) Matrix
-* Deferred Rendering pipeline and how render passes work and interact in a frame
-* Physical Based Rendering concepts such as rendering objects based on thier physical properties like metallic & roughness and energy conservation
+* Designing a clean and scalable rendering architecture
+* CPU–GPU data flow using constant buffers
+* Transparent object rendering and draw order considerations
+* Tangent–Bitangent–Normal (TBN) matrix usage for normal mapping
+* Deferred rendering and multi-pass rendering workflows
+* Core PBR principles such as energy conservation and material response
 
-## Borrowed
-* A WinApi header file to reduces build time by excluding unnecessary declarations from [Chili Framework](https://wiki.planetchili.net/index.php/Chili_Framework)
+## Borrowed Code
+WinAPI header optimization adapted from the [Chili Framework](https://wiki.planetchili.net/index.php/Chili_Framework)
 
 ## Libraries / Dependencies Used
-* Assimp Mesh Loader [Assimp](https://github.com/assimp/assimp)
+* [Assimp](https://github.com/assimp/assimp) Mesh Loader
 
 ## Build Instructions
-1.Clone the repo with command
+### Requirements
+* Windows 10+
+* Visual Studio 2022
+* Windows 10 SDK
+* Premake5
+
 ````bash
 git clone <repository-url>
+cd DX11-Renderer
+premake5 vs2022
 ````
-2. Setup premake [Premake website](https://premake.github.io/)
-3. Run premake build command on project root directory [Premake commands documentation](https://premake.github.io/docs/Using-Premake)
-4. Open generated project files and build
