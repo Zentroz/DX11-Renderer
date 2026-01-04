@@ -32,5 +32,6 @@ namespace zRender {
 	struct TextureCPU : public ResourceCPU {
 		unsigned char* pixels;
 		int width, height, channels;
+		uint32_t usageFlags;
 	};
 }

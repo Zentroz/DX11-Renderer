@@ -18,6 +18,7 @@ namespace zRender {
         void Shutdown() override;
 
         ID3D11RenderTargetView* CreateRenderTarget();
+        ID3D11Texture2D* GetBackBufferTexture();
 
         ID3D11Device* GetDevice() const { return m_Device.Get(); }
         IDXGISwapChain* GetSwapChain() const { return m_SwapChain.Get(); }

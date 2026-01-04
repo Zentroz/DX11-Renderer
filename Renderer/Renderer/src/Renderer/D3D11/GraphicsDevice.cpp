@@ -65,19 +65,17 @@ namespace zRender {
 
         HRESULT hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
 
-        D3D11_TEXTURE2D_DESC desc;
-        pBackBuffer->GetDesc(&desc);
-
-        int m_width = desc.Width;
-        int m_height = desc.Height;
-
         if (pBackBuffer != 0) {
             m_Device->CreateRenderTargetView(pBackBuffer, nullptr, &rtv);
             pBackBuffer->Release();
         }
 
-
-
         return rtv;
+    }
+
+    ID3D11Texture2D* D3D11Device::GetBackBufferTexture() {
+        ID3D11Texture2D* pBackBuffer = nullptr;
+        HRESULT hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+        return pBackBuffer;
     }
 }

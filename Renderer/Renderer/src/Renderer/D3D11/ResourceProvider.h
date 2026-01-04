@@ -15,7 +15,7 @@
 #include"Renderer/Render/PipelineStateContainer.h"
 
 namespace zRender {
-	enum InputLayout { InputLayout_PNTT, InputLayout_P };
+	enum InputLayout { InputLayout_None, InputLayout_PNTT, InputLayout_P };
 
 	class D3D11ResourceProvider : public IRenderResourceProvider {
 	private:
@@ -30,7 +30,7 @@ namespace zRender {
 		TextureHandle LoadTexture(const TextureCPU& rawTexture);
 		TextureHandle LoadTextureCubeMap(const TextureCPU rawTexture[6]);
 
-		TextureHandle CreateTexture(int width, int height, zRender::TextureFormat format);
+		TextureHandle CreateTexture(int width, int height, zRender::TextureFormat format, TextureUsageFlags usageFlags) override;
 
 		BufferHandle CreateBuffer(zRender::Buffer_Usage usage, int accessFlag, UINT byteWidth, void* initData) override;
 		ID3D11Buffer* GetBuffer(BufferHandle h);
@@ -56,6 +56,9 @@ namespace zRender {
 		std::unordered_map<BufferHandle, ID3D11Buffer*> m_BufferMap;
 		std::unordered_map<DepthStateHandle, ID3D11DepthStencilState*> m_DepthStencilStateMap;
 		std::unordered_map<RasterizerHandle, ID3D11RasterizerState*> m_RasterizerStateMap;
+
+	private:
+		TextureHandle CreateTextureResource(ID3D11Texture2D* texture, TextureUsageFlags usageFlags);
 	};
 
 	template <typename T>

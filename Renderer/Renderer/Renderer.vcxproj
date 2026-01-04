@@ -81,6 +81,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Renderer\Core\Handles.h" />
+    <ClInclude Include="src\Renderer\Core\Helpers.h" />
+    <ClInclude Include="src\Renderer\Core\Macros.h" />
     <ClInclude Include="src\Renderer\Core\Math.h" />
     <ClInclude Include="src\Renderer\Core\ResourceGPU.h" />
     <ClInclude Include="src\Renderer\Core\ResourcesCPU.h" />
@@ -88,9 +90,16 @@
     <ClInclude Include="src\Renderer\D3D11\GraphicsDevice.h" />
     <ClInclude Include="src\Renderer\D3D11\RenderContext.h" />
     <ClInclude Include="src\Renderer\D3D11\ResourceProvider.h" />
+    <ClInclude Include="src\Renderer\RenderGraph\RenderGraph.h" />
+    <ClInclude Include="src\Renderer\RenderPasses\GBufferDebugPass.h" />
+    <ClInclude Include="src\Renderer\RenderPasses\GBufferPass.h" />
+    <ClInclude Include="src\Renderer\RenderPasses\LightingPass.h" />
+    <ClInclude Include="src\Renderer\RenderPasses\PresentPass.h" />
+    <ClInclude Include="src\Renderer\RenderPasses\ShadowPass.h" />
     <ClInclude Include="src\Renderer\Render\Camera.h" />
     <ClInclude Include="src\Renderer\Render\GraphicsDeviceInterface.h" />
     <ClInclude Include="src\Renderer\Render\PipelineStateContainer.h" />
+    <ClInclude Include="src\Renderer\Render\RenderConstantBuffers.h" />
     <ClInclude Include="src\Renderer\Render\RenderContextInterface.h" />
     <ClInclude Include="src\Renderer\Render\RenderItem.h" />
     <ClInclude Include="src\Renderer\Render\RenderPassInterface.h" />
@@ -102,6 +111,12 @@
     <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp" />
     <ClCompile Include="src\Renderer\D3D11\RenderContext.cpp" />
     <ClCompile Include="src\Renderer\D3D11\ResourceProvider.cpp" />
+    <ClCompile Include="src\Renderer\RenderGraph\RenderGraph.cpp" />
+    <ClCompile Include="src\Renderer\RenderPasses\GBufferDebugPass.cpp" />
+    <ClCompile Include="src\Renderer\RenderPasses\GBufferPass.cpp" />
+    <ClCompile Include="src\Renderer\RenderPasses\LightingPass.cpp" />
+    <ClCompile Include="src\Renderer\RenderPasses\PresentPass.cpp" />
+    <ClCompile Include="src\Renderer\RenderPasses\ShadowPass.cpp" />
     <ClCompile Include="src\Renderer\Render\Camera.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />
   </ItemGroup>

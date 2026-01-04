@@ -9,9 +9,10 @@ using namespace DirectX;
 
 constexpr float DEG2RAD = 3.14159265 / 180.0f;
 
-FreelookCamera::FreelookCamera() : pitch(0), yaw(0) {
-	m_Camera.aspectRatio = 1536.0f / 793.0f;
-	m_Camera.nearPlane = 0.001f;
+FreelookCamera::FreelookCamera() 
+	: pitch(0), yaw(0), m_Camera(1536, 793, 60.0f, 0.01f, 20.0f) 
+{
+	m_Camera.renderMode = zRender::Camera::Perspective;
 }
 
 void FreelookCamera::Update() {

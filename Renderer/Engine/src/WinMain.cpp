@@ -36,6 +36,81 @@ using namespace zRender;
 
 void PopulateCubeMesh(MeshCPU& mesh);
 MeshCPU GenerateSphere(MeshCPU& mesh, float radius, uint32_t slices, uint32_t stacks);
+void CreatePipelines(std::vector<PipelineStateContainer>& pipelineStateContainers, D3D11ResourceProvider& p) {
+	ShaderLoader shaderLoader;
+
+	ShaderCPU gDebugShader;
+	gDebugShader.inputLayout = InputLayout_None;
+	shaderLoader.Load(gDebugShader, "Assets/Shaders/GeometryDebugShader.hlsl");
+
+	ShaderCPU gShader;
+	gShader.inputLayout = InputLayout_PNTT;
+	shaderLoader.Load(gShader, "Assets/Shaders/GeometryShader.hlsl");
+
+	ShaderCPU pbrShader;
+	pbrShader.inputLayout = InputLayout_PNTT;
+	shaderLoader.Load(pbrShader, "Assets/Shaders/pbr.hlsl");
+
+	ShaderCPU sShader;
+	sShader.inputLayout = InputLayout_PNTT;
+	shaderLoader.Load(sShader, "Assets/Shaders/ShadowShader.hlsl");
+
+	ShaderCPU lightShader;
+	lightShader.inputLayout = InputLayout_None;
+	shaderLoader.Load(lightShader, "Assets/Shaders/LightingShader.hlsl");
+
+	ShaderCPU presentShader;
+	presentShader.inputLayout = InputLayout_None;
+	shaderLoader.Load(presentShader, "Assets/Shaders/PresentShader.hlsl");
+
+	PipelineStateContainer gBufferDebugPass;
+	gBufferDebugPass.name = "GBufferDebug";
+	gBufferDebugPass.depthStencilHandle = p.GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never);
+	gBufferDebugPass.rasterizerHandle = p.GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+	gBufferDebugPass.topology = PrimitiveTopology_Triangelist;
+	gBufferDebugPass.shaderHandle = p.LoadShader(gDebugShader);
+	pipelineStateContainers.push_back(gBufferDebugPass);
+
+	PipelineStateContainer gBufferPass;
+	gBufferPass.name = "GBufferPass";
+	gBufferPass.depthStencilHandle = p.GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never);
+	gBufferPass.rasterizerHandle = p.GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+	gBufferPass.topology = PrimitiveTopology_Triangelist;
+	gBufferPass.shaderHandle = p.LoadShader(gShader);
+	pipelineStateContainers.push_back(gBufferPass);
+
+	PipelineStateContainer pbrOpaque;
+	pbrOpaque.name = "PBROpaque";
+	pbrOpaque.depthStencilHandle = p.GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never);
+	pbrOpaque.rasterizerHandle = p.GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+	pbrOpaque.topology = PrimitiveTopology_Triangelist;
+	pbrOpaque.shaderHandle = p.LoadShader(pbrShader);
+	pipelineStateContainers.push_back(pbrOpaque);
+
+	PipelineStateContainer shadowPass;
+	shadowPass.name = "ShadowPass";
+	shadowPass.depthStencilHandle = p.GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never);
+	shadowPass.rasterizerHandle = p.GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+	shadowPass.topology = PrimitiveTopology_Triangelist;
+	shadowPass.shaderHandle = p.LoadShader(sShader);
+	pipelineStateContainers.push_back(shadowPass);
+
+	PipelineStateContainer presentPass;
+	presentPass.name = "PresentPass";
+	presentPass.depthStencilHandle = p.GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never);
+	presentPass.rasterizerHandle = p.GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+	presentPass.topology = PrimitiveTopology_Triangelist;
+	presentPass.shaderHandle = p.LoadShader(presentShader);
+	pipelineStateContainers.push_back(presentPass);
+
+	PipelineStateContainer lightPass;
+	lightPass.name = "LightPass";
+	lightPass.depthStencilHandle = p.GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never);
+	lightPass.rasterizerHandle = p.GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+	lightPass.topology = PrimitiveTopology_Triangelist;
+	lightPass.shaderHandle = p.LoadShader(lightShader);
+	pipelineStateContainers.push_back(lightPass);
+}
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PWSTR pCmdLine, _In_ int nCmdShow) {
 	CreateConsole();
@@ -51,7 +126,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
 	D3D11ResourceProvider resourceProvider(&graphicsDevice);
 	D3D11RenderContext renderContext(graphicsDevice.GetDeviceContext(), graphicsDevice.GetSwapChain(), &resourceProvider);
-	renderContext.SetRenderTargetView(graphicsDevice.CreateRenderTarget());
+
+	std::vector<PipelineStateContainer> pipelineStateContainers;
+	CreatePipelines(pipelineStateContainers, resourceProvider);
+	for (auto& state : pipelineStateContainers) {
+		resourceProvider.AddPipelineStateContainer(state);
+	}
 
 	TextureLoader textureLoader;
 	ShaderLoader shaderLoader;
@@ -72,7 +152,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
 	textureLoader.FlipImage();
 	TextureCPU texture;
+	texture.usageFlags = static_cast<uint32_t>(TextureUsageFlags::TextureUsageFlag_ShaderResource);
 	TextureCPU normalMap;
+	normalMap.usageFlags = static_cast<uint32_t>(TextureUsageFlags::TextureUsageFlag_ShaderResource);
 	textureLoader.Load(texture, "Assets/sand.png");
 	textureLoader.Load(normalMap, "Assets/sand_normal.png");
 
@@ -108,7 +190,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 	plane.flags = RenderFlag_CastShadows | RenderFlag_ReceiveShadows;
 	plane.material.diffuseColor = { 1, 1, 1, 1 };
 	plane.material.metallic = 0;
-	plane.material.roughness = 0;
+	plane.material.roughness = 1;
 	plane.material.diffuseTexHandle = resourceProvider.LoadTexture(texture);
 	plane.material.normalTexHandle = resourceProvider.LoadTexture(normalMap);
 

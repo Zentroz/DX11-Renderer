@@ -51,12 +51,22 @@ namespace zRender {
 	struct D3D11Texture : public D3D11Resource {
 		ID3D11Texture2D* texture = nullptr;
 		ID3D11ShaderResourceView* shaderResourceView = nullptr;
+		ID3D11RenderTargetView* renderTargetView = nullptr;
+		ID3D11DepthStencilView* depthStencilView = nullptr;
 		ID3D11SamplerState* samplerState = nullptr;
 
 		void Release() override {
 			if (texture) {
 				texture->Release();
 				texture = nullptr;
+			}
+			if (renderTargetView) {
+				renderTargetView->Release();
+				renderTargetView = nullptr;
+			}
+			if (depthStencilView) {
+				depthStencilView->Release();
+				depthStencilView = nullptr;
 			}
 			if (shaderResourceView) {
 				shaderResourceView->Release();

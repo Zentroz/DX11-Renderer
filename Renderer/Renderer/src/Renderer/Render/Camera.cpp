@@ -3,8 +3,8 @@
 using namespace DirectX;
 
 namespace zRender {
-	Camera::Camera(float aspectRatio, float fov, float nearPlane, float farPlane) :
-		fov(fov), aspectRatio(aspectRatio), nearPlane(nearPlane), farPlane(farPlane)
+	Camera::Camera(float width, float height, float fov, float nearPlane, float farPlane) :
+		fov(fov), width(width), height(height), nearPlane(nearPlane), farPlane(farPlane), renderMode(Perspective)
 	{
 		position = { 0, 0, -5 };
 		up = { 0, 1, 0 };
@@ -12,33 +12,34 @@ namespace zRender {
 	}
 
 	XMMATRIX Camera::ViewProjMatrix() const {
-		XMMATRIX proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(fov), aspectRatio, nearPlane, farPlane);
-
-		XMVECTOR upVec = XMVectorSet(up.x, up.y, up.z, 1);
-		XMVECTOR positionVec = XMVectorSet(position.x, position.y, position.z, 1);
-		XMVECTOR forwardVec = XMVectorSet(position.x + forward.x, position.y + forward.y, position.z + forward.z, 0);
-		//XMVECTOR forwardVec = XMVectorSet(0, 0, 0, 0);
-
-		XMMATRIX view = XMMatrixLookAtLH(positionVec, forwardVec, upVec);
-
-		return view * proj;
+		return ViewMatrix() * ProjMatrix();
 	}
 
 	XMMATRIX Camera::ViewMatrix() const {
+		XMVECTOR forwardVec = XMVectorSet(forward.x, forward.y, forward.z, 0);
+
 		XMVECTOR upVec = XMVectorSet(up.x, up.y, up.z, 1);
 		XMVECTOR positionVec = XMVectorSet(position.x, position.y, position.z, 1);
-		XMVECTOR forwardVec = XMVectorSet(position.x + forward.x, position.y + forward.y, position.z + forward.z, 0);
-		//XMVECTOR forwardVec = XMVectorSet(0, 0, 0, 0);
+		XMVECTOR targetVec = XMVectorSet(position.x, position.y, position.z, 1) + XMVector3Normalize(forwardVec);
 
-		XMMATRIX view = XMMatrixLookAtLH(positionVec, forwardVec, upVec);
+		XMMATRIX view = XMMatrixLookAtLH(positionVec, targetVec, upVec);
 
 		return view;
 	}
 
 	XMMATRIX Camera::ProjMatrix() const {
-		XMMATRIX proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(fov), aspectRatio, nearPlane, farPlane);
+		XMMATRIX proj = XMMatrixIdentity();
 
-		return proj;
+		switch (renderMode) {
+		case Perspective:
+			proj = XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(fov), width / height, nearPlane, farPlane);
+			break;
+		case Orthographic:
+			proj = XMMatrixOrthographicLH(width, height, nearPlane, farPlane);
+			break;
+		}
+
+		return XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(fov), width / height, nearPlane, farPlane);
 	}
 
 }

@@ -6,11 +6,46 @@ namespace zRender {
 	D3D11RenderContext::D3D11RenderContext(ID3D11DeviceContext* context, IDXGISwapChain* swapChain, D3D11ResourceProvider* resourceProvider) :
 		context(context), swapChain(swapChain), resourceProvider(resourceProvider) {
 
-		depthStencil = resourceProvider->CreateDepthStencilView();
+		//depthStencil = resourceProvider->CreateDepthStencilView();
 	}
 
-	void D3D11RenderContext::SetRenderTargetView(ID3D11RenderTargetView* renderTarget) {
-		this->renderTarget = renderTarget;
+	void D3D11RenderContext::ClearRenderTarget(TextureHandle handle, float clearColor[4]) {
+		D3D11Texture* tex = resourceProvider->GetResource<D3D11Texture>(handle);
+		context->ClearRenderTargetView(tex->renderTargetView, clearColor);
+	}
+
+	void D3D11RenderContext::ClearDepthStencil(TextureHandle handle) {
+		D3D11Texture* tex = resourceProvider->GetResource<D3D11Texture>(handle);
+		if (tex->depthStencilView)
+			context->ClearDepthStencilView(tex->depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
+
+	void D3D11RenderContext::ClearStatesAndResources() {
+		context->OMSetRenderTargets(0, nullptr, nullptr);
+
+		ID3D11ShaderResourceView* nullSrvs[16] = {};
+		context->PSSetShaderResources(0, 16, nullSrvs);
+	}
+
+	void D3D11RenderContext::BindMultiViews(size_t renderViewCount, Handle* renderViews, Handle depthView) {
+		std::vector<ID3D11RenderTargetView*> views;
+		views.reserve(renderViewCount);
+
+		for (size_t i = 0; i < renderViewCount; i++) {
+			D3D11Texture* texture = resourceProvider->GetResource<D3D11Texture>(renderViews[i]);
+			ID3D11RenderTargetView* rtv = texture->renderTargetView;
+			views.push_back(rtv);
+		}
+
+
+		ID3D11DepthStencilView* dsv = nullptr;
+
+		if (depthView != InvalidHandle) {
+			auto tex = resourceProvider->GetResource<D3D11Texture>(depthView);
+			dsv = tex->depthStencilView;
+		}
+
+		context->OMSetRenderTargets(renderViewCount, views.data(), dsv);
 	}
 
 	void D3D11RenderContext::UpdateBuffer(BufferHandle h, UINT byteWidth, void* data) {
@@ -47,11 +82,6 @@ namespace zRender {
 	}
 
 	void D3D11RenderContext::BeginFrame() {
-		context->ClearRenderTargetView(renderTarget, bgColor);
-		context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-		context->OMSetRenderTargets(1, &renderTarget, depthStencil);
-
 		SetViewport(1536, 793);
 	}
 
@@ -73,6 +103,14 @@ namespace zRender {
 		BindMesh(*mesh, context);
 
 		context->DrawIndexed(mesh->indexCount, 0, 0);
+	}
+
+	void D3D11RenderContext::Draw(uint64_t count) {
+		context->Draw(count, 0);
+	}
+
+	void D3D11RenderContext::DrawIndexed(uint64_t count) {
+		context->DrawIndexed(count, 0, 0);
 	}
 
 	void D3D11RenderContext::EndFrame() {

@@ -1,5 +1,11 @@
 #include"Renderer.h"
 
+#include"RenderPasses/GBufferPass.h"
+#include"RenderPasses/GBufferDebugPass.h"
+#include"RenderPasses/PresentPass.h"
+#include"RenderPasses/LightingPass.h"
+#include"RenderPasses/ShadowPass.h"
+
 namespace zRender {
 
 	DirectX::XMMATRIX GetVPMatrix(vec3 cameraPosition) {
@@ -42,23 +48,56 @@ namespace zRender {
 		sbData.view = DirectX::XMMatrixIdentity();
 		sbData.proj = DirectX::XMMatrixIdentity();
 
+		float width = 1536;
+		float height = 793;
+
 		staticBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Immutable, 0, sizeof(StaticData), &sData);
 		frameBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(FrameData), &fData);
 		objectBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(ObjectData), &oData);
 		materialBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(MaterialData), &mData);
 		skyboxBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(SkyboxData), &sbData);
+		
+		GBuffer gData = {};
+		gData.albedoRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource);
+		gData.normalRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGB10A2_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource);
+		gData.materialRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource);
+		gData.depthRT = resourceProvider->CreateTexture(width, height, TextureFormat_R32_Typeless, TextureUsageFlags::TextureUsageFlag_DepthStencil | TextureUsageFlags::TextureUsageFlag_ShaderResource);
+		gData.objectBufferHandle = objectBufferHandle;
+		gData.materialBufferHandle = materialBufferHandle;
+		gData.pipelineStateHandles = resourceProvider->GetPipelineStateContainer("GBufferPass");
+		GBufferPass* gPass = new GBufferPass(gData);
+		renderGraph.AddPass(gPass);
+		
+		// Directional Light Shadow
+		/*
+		ShadowPass::InitData shadowInit;
+		shadowInit.depthSV = resourceProvider->CreateTexture(width, height, TextureFormat_R32_Typeless, TextureUsageFlags::TextureUsageFlag_DepthStencil | TextureUsageFlags::TextureUsageFlag_ShaderResource);
+		shadowInit.frameBufferHandle = frameBufferHandle;
+		shadowInit.objectBufferHandle = objectBufferHandle;
+		shadowInit.pipeline = resourceProvider->GetPipelineStateContainer("ShadowPass");
 
-		PipelineStateContainer pbrOpaque;
-		pbrOpaque.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_Back, RasterizerFunc_FillMode_Solid);
-		pbrOpaque.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_All, DepthFunc_LessEqual);
-		pbrOpaque.topology = PrimitiveTopology_Triangelist;
-		m_PipelineStates[PipelineStateType_PBR_Opaque] = pbrOpaque;
+		ShadowPass* shadow = new ShadowPass(shadowInit);
+		renderGraph.AddPass(shadow);
+		*/
 
-		PipelineStateContainer skybox;
-		skybox.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
-		skybox.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_LessEqual);
-		skybox.topology = PrimitiveTopology_Triangelist;
-		m_PipelineStates[PipelineStateType_Skybox] = skybox;
+		LightingPass::MatricesBufferData lpmData;
+		lpmData.invViewProj = DirectX::XMMatrixIdentity();
+
+		LightingPass::InitData lightPassData;
+		lightPassData.albedoRT = gData.albedoRT;
+		lightPassData.normalRT = gData.normalRT;
+		lightPassData.materialRT = gData.materialRT;
+		lightPassData.depthRT = gData.depthRT;
+		//lightPassData.shadowDSV = shadowInit.depthSV;
+		lightPassData.shadowDSV = InvalidHandle;
+		lightPassData.outputRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource);
+		lightPassData.matricesBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(LightingPass::MatricesBufferData), &lpmData);
+		lightPassData.pipeline = resourceProvider->GetPipelineStateContainer("LightPass");
+		LightingPass* lightPass = new LightingPass(lightPassData);
+		renderGraph.AddPass(lightPass);
+
+		PresentPass* presentPass = new PresentPass(lightPassData.outputRT, resourceProvider->GetScreenTextureHandle(), resourceProvider->GetPipelineStateContainer("PresentPass"));
+		renderGraph.AddPass(presentPass);
 	}
 
 	void Renderer::SetCamera(Camera& cam) {
@@ -84,21 +123,28 @@ namespace zRender {
 	}
 
 	void Renderer::Render() {
-		RenderSkybox();
-		RenderOpaque();
+		m_RenderContext->BindBufferVS(0, staticBufferHandle);
+		m_RenderContext->BindBufferPS(0, staticBufferHandle);
+		m_RenderContext->BindBufferVS(1, frameBufferHandle);
+		m_RenderContext->BindBufferPS(1, frameBufferHandle);
+		RenderPassContext ctx(m_RenderContext, renderCamera, m_RenderQueue);
+		renderGraph.Execute(ctx);
 	}
 	void Renderer::EndRender() {
 		m_RenderQueue.clear();
 	}
 
 	void Renderer::RenderOpaque() {
+		Handle h[1] = {resourceProvider->GetScreenTextureHandle()};
+		m_RenderContext->BindMultiViews(1, h, InvalidHandle);
+
 		m_RenderContext->BindBufferVS(0, staticBufferHandle);
 		m_RenderContext->BindBufferPS(0, staticBufferHandle);
 
 		m_RenderContext->BindBufferVS(1, frameBufferHandle);
 		m_RenderContext->BindBufferPS(1, frameBufferHandle);
 
-		const PipelineStateContainer pipeline = GetPipelineState(PipelineStateType_PBR_Opaque);
+		PipelineStateContainer pipeline = resourceProvider->GetPipelineStateContainer("PBROpaque");
 		m_RenderContext->BindPipeline(pipeline);
 		for (const auto& item : m_RenderQueue) {
 			ObjectData objectData;
@@ -121,8 +167,6 @@ namespace zRender {
 	}
 	void Renderer::RenderSkybox() {
 		SkyboxData sbData;
-		//sbData.model = ;
-		
 		sbData.view = DirectX::XMMatrixTranspose(renderCamera.ViewMatrix());
 		sbData.proj = DirectX::XMMatrixTranspose(renderCamera.ProjMatrix());
 		m_RenderContext->UpdateBuffer(skyboxBufferHandle, sizeof(SkyboxData), &sbData);
@@ -147,3 +191,18 @@ namespace zRender {
 	}
 
 }
+
+/*
+PipelineStateContainer pbrOpaque;
+pbrOpaque.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_Back, RasterizerFunc_FillMode_Solid);
+pbrOpaque.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_All, DepthFunc_LessEqual);
+pbrOpaque.shaderHandle = resourceProvider->GetDefaultGeometryShaderHandle();
+pbrOpaque.topology = PrimitiveTopology_Triangelist;
+m_PipelineStates[PipelineStateType_PBR_Opaque] = pbrOpaque;
+
+PipelineStateContainer skybox;
+skybox.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
+skybox.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_LessEqual);
+skybox.topology = PrimitiveTopology_Triangelist;
+m_PipelineStates[PipelineStateType_Skybox] = skybox;
+*/

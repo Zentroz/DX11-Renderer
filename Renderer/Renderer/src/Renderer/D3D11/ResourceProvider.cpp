@@ -1,7 +1,12 @@
 #include"ResourceProvider.h"
 #include<fstream>
 
+#include <iostream>
+#include <comdef.h>
+#include <string>
+
 std::vector<std::vector<D3D11_INPUT_ELEMENT_DESC>> inputLayouts = {
+	{},
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -21,6 +26,7 @@ namespace zRender {
 		CreateRasterizer(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Wireframe);
 		CreateDepthStencilState(DepthWriteMask_All, DepthFunc_LessEqual);
 		CreateDepthStencilState(DepthWriteMask_Zero, DepthFunc_LessEqual);
+		screenTextureHandle = CreateTextureResource(device->GetBackBufferTexture(), TextureUsageFlags::TextureUsageFlag_RenderTarget);
 	}
 
 	MeshHandle D3D11ResourceProvider::LoadMesh(const MeshCPU& rawMesh) {
@@ -147,7 +153,8 @@ namespace zRender {
 		hr = device->GetDevice()->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &shader->vertexShader);
 		hr = device->GetDevice()->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &shader->pixelShader);
 
-		hr = device->GetDevice()->CreateInputLayout(inputLayouts[rawShader.inputLayout].data(), inputLayouts[rawShader.inputLayout].size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &shader->inputLayout);
+		if (rawShader.inputLayout != InputLayout_None) 
+			hr = device->GetDevice()->CreateInputLayout(inputLayouts[rawShader.inputLayout].data(), inputLayouts[rawShader.inputLayout].size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &shader->inputLayout);
 
 		if (vsBlob) vsBlob->Release();
 		if (psBlob) psBlob->Release();
@@ -158,7 +165,7 @@ namespace zRender {
 	}
 
 	TextureHandle D3D11ResourceProvider::LoadTexture(const TextureCPU& rawTexture) {
-		std::shared_ptr<D3D11Texture> texture = std::make_shared<D3D11Texture>();
+		ID3D11Texture2D* texture = nullptr;
 
 		D3D11_TEXTURE2D_DESC desc;
 		ZeroMemory(&desc, sizeof(desc));
@@ -180,31 +187,12 @@ namespace zRender {
 		initData.SysMemPitch = rawTexture.width * 4;
 		initData.SysMemSlicePitch = 0;
 
-		D3D11_SAMPLER_DESC sampDesc;
-		ZeroMemory(&sampDesc, sizeof(sampDesc));
-		sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-
-		HRESULT hr;
-		if (FAILED(hr = device->GetDevice()->CreateSamplerState(&sampDesc, &texture->samplerState))) {
-			printf("Failed to create sampler.");
-			return InvalidHandle;
-		}
-		if (FAILED(hr = device->GetDevice()->CreateTexture2D(&desc, &initData, &texture->texture))) {
+		if (FAILED(device->GetDevice()->CreateTexture2D(&desc, &initData, &texture))) {
 			printf("Failed to create texture2d.");
 			return InvalidHandle;
 		}
-		if (FAILED(hr = device->GetDevice()->CreateShaderResourceView(texture->texture, nullptr, &texture->shaderResourceView))) {
-			printf("Failed to create srv.");
-			return InvalidHandle;
-		}
 
-		TextureHandle handle = m_TextureMap.size() + 1;
-		m_TextureMap[handle] = texture;
-		return handle;
+		return CreateTextureResource(texture, static_cast<TextureUsageFlags>(rawTexture.usageFlags));
 	}
 
 	// Order of Textures : 0 = +X, 1 = -X, 2 = +Y, 3 = -Y, 4 = +Z, 5 = -Z
@@ -304,32 +292,7 @@ namespace zRender {
 	}
 
 	ID3D11DepthStencilView* D3D11ResourceProvider::CreateDepthStencilView() {
-		ID3D11DepthStencilView* view = nullptr;
-
-		// Creating depth stencil texture
-		ID3D11Texture2D* pDepthStencil = nullptr;
-		D3D11_TEXTURE2D_DESC descDepth = {};
-		ZeroMemory(&descDepth, sizeof(descDepth));
-		descDepth.Width = 1536;
-		descDepth.Height = 793;
-		descDepth.MipLevels = 1;
-		descDepth.ArraySize = 1;
-		descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		descDepth.SampleDesc.Count = 1;
-		descDepth.SampleDesc.Quality = 0;
-		descDepth.Usage = D3D11_USAGE_DEFAULT;
-		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-		descDepth.CPUAccessFlags = 0;
-		descDepth.MiscFlags = 0;
-		device->GetDevice()->CreateTexture2D(&descDepth, nullptr, &pDepthStencil);
-
-		// Creating depth stencil view
-		if (pDepthStencil) device->GetDevice()->CreateDepthStencilView(pDepthStencil, nullptr, &view);
-		else return nullptr;
-
-		pDepthStencil->Release();
-
-		return view;
+		return nullptr;
 	}
 
 	D3D11_DEPTH_WRITE_MASK MyDepthMaskToDx(DepthWriteMask write) {
@@ -411,46 +374,125 @@ namespace zRender {
 			return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		case zRender::TextureFormat::TextureFormat_RGBA8_UNorm:
 			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case zRender::TextureFormat::TextureFormat_RGB10A2_UNorm:
+			return DXGI_FORMAT_R10G10B10A2_UNORM;
+		case zRender::TextureFormat::TextureFormat_RGBA16F:
+			return DXGI_FORMAT_R16G16B16A16_FLOAT;
+		case zRender::TextureFormat::TextureFormat_R32_Typeless:
+			return DXGI_FORMAT_R32_TYPELESS;
 		}
 
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	}
-
-	TextureHandle D3D11ResourceProvider::CreateTexture(int width, int height, zRender::TextureFormat format) {
+	///*
+	void CheckHResult(HRESULT hr, const std::string& message) {
+		if (FAILED(hr)) {
+			_com_error err(hr);
+			// err.ErrorMessage() returns a wide character string (LPCTSTR)
+			// You might need a conversion if your project uses multi-byte characters
+			// For Unicode projects (default in modern VS), this works fine
+			MessageBox(
+				nullptr,
+				err.ErrorMessage(),
+				L"DirectX Error",
+				MB_OK | MB_ICONERROR
+			);
+			std::cerr << "Error: " << message << std::endl;
+			// Optionally exit or throw an exception
+			// exit(-1); 
+		}
+	}
+	//*/
+	TextureHandle D3D11ResourceProvider::CreateTexture(int width, int height, TextureFormat format, TextureUsageFlags usageFlags) {
 		ID3D11Texture2D* texture = nullptr;
-		ID3D11ShaderResourceView* srv = nullptr;
-		ID3D11SamplerState* sampler = nullptr;
 
-		D3D11_TEXTURE2D_DESC tDesc;
-		ZeroMemory(&tDesc, sizeof(tDesc));
-		tDesc.Format = MyTextureFormatToDX11(format);
-		tDesc.Width = static_cast<UINT>(width);
-		tDesc.Height = static_cast<UINT>(height);
-		tDesc.MipLevels = 1;
-		tDesc.ArraySize = 1;
-		tDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+		D3D11_TEXTURE2D_DESC desc;
+		ZeroMemory(&desc, sizeof(desc));
+		desc.Width = static_cast<UINT>(width);
+		desc.Height = static_cast<UINT>(height);
+		desc.MipLevels = 1;
+		desc.ArraySize = 1;
+		desc.Format = MyTextureFormatToDX11(format);
+		desc.SampleDesc.Count = 1;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		UINT bindFlags = 0;
+		if (HasFlag(usageFlags, TextureUsageFlags::TextureUsageFlag_ShaderResource)) {
+			bindFlags |= D3D11_BIND_SHADER_RESOURCE;
+		}
+		if (HasFlag(usageFlags, TextureUsageFlags::TextureUsageFlag_RenderTarget)) {
+			bindFlags |= D3D11_BIND_RENDER_TARGET;
+		}
+		if (HasFlag(usageFlags, TextureUsageFlags::TextureUsageFlag_DepthStencil)) {
+			bindFlags |= D3D11_BIND_DEPTH_STENCIL;
+		}
+		desc.BindFlags = bindFlags;
 
-		device->GetDevice()->CreateTexture2D(&tDesc, nullptr, &texture);
+		HRESULT hr = device->GetDevice()->CreateTexture2D(&desc, nullptr, &texture);
+
+		if (FAILED(hr)) {
+			printf("Failed to create texture2d.");
+			return InvalidHandle;
+		}
+
+		return CreateTextureResource(texture, usageFlags);
+	}
+
+	TextureHandle D3D11ResourceProvider::CreateTextureResource(ID3D11Texture2D* texture, TextureUsageFlags usageFlags) {
+		std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>();
+		tex->texture = texture;
+
+		D3D11_SAMPLER_DESC sampDesc;
+		ZeroMemory(&sampDesc, sizeof(sampDesc));
+		sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+		if (FAILED(device->GetDevice()->CreateSamplerState(&sampDesc, &tex->samplerState))) {
+			printf("Failed to create sampler.");
+			return InvalidHandle;
+		}
+
+		bool createRTV = HasFlag(usageFlags, TextureUsageFlags::TextureUsageFlag_RenderTarget);
+		bool createSRV = HasFlag(usageFlags, TextureUsageFlags::TextureUsageFlag_ShaderResource);
+		bool createDSV = HasFlag(usageFlags, TextureUsageFlags::TextureUsageFlag_DepthStencil);
+		bool depthTexture = createSRV && createDSV;
+
+		if (createDSV && createRTV) {
+			printf("Can't create a texture with RenderTargetView and DepthStencilView");
+			return InvalidHandle;
+		}
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = MyTextureFormatToDX11(format);
+		srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		if (!texture) return InvalidHandle;
-		device->GetDevice()->CreateShaderResourceView(texture, &srvDesc, &srv);
+		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+		dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
-		D3D11_SAMPLER_DESC sDesc;
-		sDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-		sDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-		sDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-		sDesc.BorderColor[0] = 1.0f;
-		sDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+		HRESULT hr;
 
-		std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>();
-		tex->texture = texture;
-		tex->shaderResourceView = srv;
-		tex->samplerState = sampler;
+		if (createSRV) {
+			if (FAILED(hr = device->GetDevice()->CreateShaderResourceView(texture, depthTexture ? &srvDesc : nullptr, &tex->shaderResourceView))) {
+				printf("Failed to create srv.");
+				return InvalidHandle;
+			}
+		}
+		if (createRTV) {
+			if (FAILED(device->GetDevice()->CreateRenderTargetView(texture, nullptr, &tex->renderTargetView))) {
+				printf("Failed to create rtv.");
+				return InvalidHandle;
+			}
+		}
+		if (createDSV) {
+			if (FAILED(device->GetDevice()->CreateDepthStencilView(texture, depthTexture ? &dsvDesc : nullptr, &tex->depthStencilView))) {
+				printf("Failed to create dsv.");
+				return InvalidHandle;
+			}
+		}
 
 		TextureHandle h = m_TextureMap.size() + 1;
 		m_TextureMap[h] = tex;

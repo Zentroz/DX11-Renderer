@@ -3,60 +3,14 @@
 #include<vector>
 
 #include"Renderer/Core/Math.h"
+#include"Renderer/Render/Camera.h"
 #include"Renderer/Render/RenderItem.h"
 #include"Renderer/Render/RenderContextInterface.h"
 #include"Renderer/Render/ResourceProviderInterface.h"
-#include"Renderer/Render/Camera.h"
+#include"Renderer/Render/RenderConstantBuffers.h"
+#include"Renderer/RenderGraph/RenderGraph.h"
 
 namespace zRender {
-
-	__declspec(align(16)) struct Light {
-		vec3 color;
-		float intensity;
-		vec3 vector;
-		float range;
-	};
-
-	__declspec(align(16)) struct StaticData {
-		vec4 mainLightDirection;
-		vec4 mainLightColor;
-	};
-
-	__declspec(align(16)) struct FrameData {
-		DirectX::XMMATRIX vpMatrix;
-		vec4 cameraPosition;
-	};
-
-	__declspec(align(16)) struct ObjectData {
-		DirectX::XMMATRIX modelMatrix;
-	};
-	__declspec(align(16)) struct MaterialData {
-		vec4 diffuseColor;
-		float roughness;
-		float metallic;
-		vec2 padding;
-	};
-	__declspec(align(16)) struct AdditionalLightData {
-		int lightCount;
-		vec3 padding;
-		Light lights[32];
-	};
-	__declspec(align(16)) struct SkyboxData {
-		//DirectX::XMMATRIX model;
-		DirectX::XMMATRIX view;
-		DirectX::XMMATRIX proj;
-	};
-	/*
-	struct OpaquePassContext {
-		IRenderContext* renderContext;
-	};
-	struct TransparentPassContext {
-		IRenderContext* renderContext;
-	};
-	struct SkyboxPassContext {
-		IRenderContext* renderContext;
-	};*/
-
 	class Renderer {
 	public:
 		Renderer() = default;
@@ -82,6 +36,7 @@ namespace zRender {
 		IRenderContext* m_RenderContext;
 		IRenderResourceProvider* resourceProvider;
 		std::vector<RenderItem> m_RenderQueue;
+		RenderGraph renderGraph;
 		PipelineStateContainer m_PipelineStates[8];
 
 		// Constant Buffers
