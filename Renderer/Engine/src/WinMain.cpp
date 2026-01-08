@@ -3,15 +3,13 @@
 #include"Utility/AssetLoader.h"
 #include"Editor/UI.h"
 #include"Editor/ObjectPanel.h"
+#include"Engine/Scene.h"
+#include"Engine/AssetManager.h"
 
 #include<Renderer/D3D11/GraphicsDevice.h>
 #include<Renderer/D3D11/RenderContext.h>
 #include<Renderer/D3D11/ResourceProvider.h>
 #include<Renderer/Renderer.h>
-
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 
 #include<stb_image/stb_image.h>
 #include<imgui/imgui.h>
@@ -35,7 +33,8 @@ void CreateConsole()
 using namespace zRender;
 
 void PopulateCubeMesh(MeshCPU& mesh);
-MeshCPU GenerateSphere(MeshCPU& mesh, float radius, uint32_t slices, uint32_t stacks);
+void GenerateSphere(MeshCPU& mesh, float radius, uint32_t slices, uint32_t stacks);
+
 void CreatePipelines(std::vector<PipelineStateContainer>& pipelineStateContainers, D3D11ResourceProvider& p) {
 	ShaderLoader shaderLoader;
 
@@ -112,14 +111,25 @@ void CreatePipelines(std::vector<PipelineStateContainer>& pipelineStateContainer
 	pipelineStateContainers.push_back(lightPass);
 }
 
+struct MatData {
+	vec4 baseColor;
+	float roughness;
+	float metallic;
+	vec2 padding;
+};
+
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PWSTR pCmdLine, _In_ int nCmdShow) {
 	CreateConsole();
+
+	//MeshCPU cubeTest;
+	//ImportMesh("Assets/cube.fbx", cubeTest);
 
 	Window window{};
 	D3D11Device graphicsDevice{};
 	Renderer renderer{};
 	FreelookCamera freeCamera{};
 	ObjectPanel objectPanel{};
+	Scene scene{};
 
 	window.Init();
 	graphicsDevice.Initialize(window.GetHWND());
@@ -174,37 +184,49 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
 	UI::Setup(window.GetHWND(), graphicsDevice.GetDevice(), graphicsDevice.GetDeviceContext());
 
-	RenderItem sphere{};
-	sphere.meshHandle = resourceProvider.LoadMesh(sphereMesh);
-	sphere.shaderHandle = shaderH;
-	sphere.modelMatrix = DirectX::XMMatrixTranslation(0, 0, 0);
-	sphere.flags = RenderFlag_CastShadows | RenderFlag_ReceiveShadows;
-	sphere.material.diffuseColor = { 1, 0, 0, 1 };
-	sphere.material.metallic = 0;
-	sphere.material.roughness = 0.1;
+	ModelLoader modelLoader;
+	ModelAsset casaModel;
+	modelLoader.Load(casaModel, "Assets/Mesh/casa.fbx");
 
-	RenderItem plane{};
-	plane.meshHandle = resourceProvider.LoadMesh(cubeMesh);
-	plane.shaderHandle = shaderH;
-	plane.modelMatrix = DirectX::XMMatrixScaling(5, 0.1f, 5) * DirectX::XMMatrixTranslation(0, -0.6f, 0);
-	plane.flags = RenderFlag_CastShadows | RenderFlag_ReceiveShadows;
-	plane.material.diffuseColor = { 1, 1, 1, 1 };
-	plane.material.metallic = 0;
-	plane.material.roughness = 1;
-	plane.material.diffuseTexHandle = resourceProvider.LoadTexture(texture);
-	plane.material.normalTexHandle = resourceProvider.LoadTexture(normalMap);
+	Model model;
+	model.meshHandle = resourceProvider.LoadMesh(*casaModel.mesh);
+
+	for (auto m : casaModel.materials) {
+		for (uint32_t subMeshIndex : m.subMeshIndices) {
+			Material mat;
+			mat.name = casaModel.mesh->subMeshes[subMeshIndex].name;
+			mat.baseColor = m.baseColor;
+			mat.roughness = m.roughness;
+			mat.metallic = m.metallic;
+
+			Model::SubMesh sub;
+			sub.submeshIndex = subMeshIndex;
+			sub.localModelMatrix = casaModel.mesh->subMeshes[subMeshIndex].localModel;
+			sub.materialHandle = scene.GetAssetManager().AddMaterial(mat);
+
+			model.subMeshes.push_back(sub);
+		}
+	}
+
+	Entity casa;
+	casa.model = scene.GetAssetManager().AddModel(model);
+	casa.modelMatrix = casaModel.modelMatrix;
+	casa.baseColor = vec4(1, 1, 1, 1);
+	casa.roughness = 1;
+	casa.metallic = 0;
+
+	scene.AddEntity(casa);
 
 	while (!window.ShouldClose()) {
 		window.Process();
 
 		UI::NewFrame();
 
-		sphere.material.diffuseColor = objectPanel.GetColor();
-		sphere.material.roughness = objectPanel.GetRoughness();
-		sphere.material.metallic = objectPanel.GetMetallic();
-
-		renderer.Queue(sphere);
-		renderer.Queue(plane);
+		objectPanel.Draw(scene.GetAssetManager().GetAllMaterials());
+		
+		for (auto& item : scene.GenerateDrawCalls()) {
+			renderer.Queue(item);
+		}
 
 		freeCamera.Update();
 		renderer.SetCamera(freeCamera.GetCamera());
@@ -212,8 +234,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		renderer.InitRender();
 		renderer.Render();
 		renderer.EndRender();
-
-		objectPanel.Draw();
 
 		UI::Render();
 
@@ -313,12 +333,18 @@ void PopulateCubeMesh(MeshCPU& mesh) {
 	for (uint32_t i = 0; i < 36; ++i)
 		mesh.indices.push_back(i);
 
-	mesh.indexCount = 36;
+	SubMesh sub;
+	sub.vertexOffset = 0;
+	sub.vertexCount = static_cast<uint64_t>(mesh.vertices.size());
+	sub.indexOffset = 0;
+	sub.indexCount = static_cast<uint64_t>(mesh.indices.size());
+
+	mesh.subMeshes.push_back(sub);
 }
 
 constexpr float PI = 3.14159265359f;
 
-MeshCPU GenerateSphere(MeshCPU& mesh, float radius, uint32_t slices, uint32_t stacks)
+void GenerateSphere(MeshCPU& mesh, float radius, uint32_t slices, uint32_t stacks)
 {
 	// Vertices
 	for (uint32_t stack = 0; stack <= stacks; ++stack)
@@ -387,6 +413,11 @@ MeshCPU GenerateSphere(MeshCPU& mesh, float radius, uint32_t slices, uint32_t st
 		}
 	}
 
-	mesh.indexCount = static_cast<uint64_t>(mesh.indices.size());
-	return mesh;
+	SubMesh sub;
+	sub.vertexOffset = 0;
+	sub.vertexCount = static_cast<uint64_t>(mesh.vertices.size());
+	sub.indexOffset = 0;
+	sub.indexCount = static_cast<uint64_t>(mesh.indices.size());
+
+	mesh.subMeshes.push_back(sub);
 }

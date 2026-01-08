@@ -31,6 +31,9 @@
       <Filter>Window</Filter>
     </ClInclude>
     <ClInclude Include="externals\stb\stb_image\stb_image.h" />
+    <ClInclude Include="src\Engine\Scene.h" />
+    <ClInclude Include="src\Engine\MaterialManager.h" />
+    <ClInclude Include="src\Engine\AssetManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Editor\ObjectPanel.cpp">
@@ -50,5 +53,8 @@
       <Filter>Window</Filter>
     </ClCompile>
     <ClCompile Include="externals\stb\stb_image\stb_image.cpp" />
+    <ClCompile Include="src\Engine\Scene.cpp" />
+    <ClCompile Include="src\Engine\MaterialManager.cpp" />
+    <ClCompile Include="src\Engine\AssetManager.cpp" />
   </ItemGroup>
 </Project>

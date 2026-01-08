@@ -25,7 +25,7 @@ namespace zRender {
         void BindBufferPS(uint32_t slot, BufferHandle handle) override;
         void BindTextureVS(uint32_t slot, TextureHandle handle) override;
         void BindTexturePS(uint32_t slot, TextureHandle handle) override;
-        void DrawGeometryIndexed(MeshHandle handle) override;
+        void DrawGeometryIndexed(MeshHandle handle, uint32_t subMeshIndex = 0) override;
         void Draw(uint64_t count) override;
         void DrawIndexed(uint64_t count) override;
 

@@ -17,6 +17,7 @@ RenderPassDesc ShadowPass::GetDesc() const {
 	};
 }
 void ShadowPass::Execute(const RenderPassContext& ctx) {
+	/*
 	FrameData fData;
 	ObjectData oData;
 
@@ -40,4 +41,5 @@ void ShadowPass::Execute(const RenderPassContext& ctx) {
 
 		ctx.ctx->DrawGeometryIndexed(item.meshHandle);
 	}
+	*/
 }

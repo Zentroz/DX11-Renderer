@@ -135,6 +135,7 @@ namespace zRender {
 	}
 
 	void Renderer::RenderOpaque() {
+		/*
 		Handle h[1] = {resourceProvider->GetScreenTextureHandle()};
 		m_RenderContext->BindMultiViews(1, h, InvalidHandle);
 
@@ -164,6 +165,7 @@ namespace zRender {
 			m_RenderContext->BindTexturePS(1, item.material.normalTexHandle);
 			m_RenderContext->DrawGeometryIndexed(item.meshHandle);
 		}
+		*/
 	}
 	void Renderer::RenderSkybox() {
 		SkyboxData sbData;
@@ -175,7 +177,7 @@ namespace zRender {
 		m_RenderContext->BindBufferVS(0, skyboxBufferHandle);
 		m_RenderContext->BindTexturePS(0, skyboxTextureHandle);
 		MeshHandle cube = 2;
-		m_RenderContext->DrawGeometryIndexed(cube);
+		m_RenderContext->DrawGeometryIndexed(cube, 0);
 	}
 
 	void Renderer::Queue(RenderItem item) {

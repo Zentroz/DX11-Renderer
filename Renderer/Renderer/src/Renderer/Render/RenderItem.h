@@ -1,6 +1,8 @@
 #pragma once
 
+#include<vector>
 #include<DirectXMath.h>
+
 #include"Renderer/Core/Handles.h"
 #include"Renderer/Core/Math.h"
 
@@ -11,26 +13,29 @@ enum RenderFlag { None = 0, RenderFlag_CastShadows = 1 << 0, RenderFlag_ReceiveS
 
 namespace zRender {
 
-	struct Material {
-		vec4 diffuseColor;
-		vec4 ambientColor;
-		vec4 specularColor;
-		float shininess;
-		float roughness;
-		float metallic;
-		TextureHandle diffuseTexHandle = InvalidHandle;
-		TextureHandle normalTexHandle = InvalidHandle;
-	};
-
 	/// <summary>
 	/// Item to be rendered.
 	/// </summary>
 	struct RenderItem {
-		TextureHandle textureHandle;
-		MeshHandle meshHandle;
-		ShaderHandle shaderHandle;
-		Material material;
-		DirectX::XMMATRIX modelMatrix;
 		int flags;
+		uint32_t subMeshIndex;
+
+		MeshHandle meshHandle;
+
+		// Material
+		struct Material {
+			vec4 baseColor;
+			float roughness;
+			float metallic;
+
+			ShaderHandle shaderHandle;
+			std::vector<TextureHandle> textureHandles;
+		} materialData;
+
+		// Starts from slot 3
+		std::vector<BufferHandle> constantBuffers;
+		std::vector<void*> constantBuffersData;
+
+		DirectX::XMMATRIX modelMatrix;
 	};
 }

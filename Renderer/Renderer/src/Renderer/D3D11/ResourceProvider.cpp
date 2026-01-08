@@ -58,8 +58,19 @@ namespace zRender {
 
 		hr = device->GetDevice()->CreateBuffer(&ibDesc, &iinitData, &mesh->indexBuffer);
 
-		mesh->indexCount = static_cast<UINT>(rawMesh.indexCount);
-		mesh->stride = sizeof(Vertex);
+		mesh->vertexStride = sizeof(Vertex);
+
+		for (const auto& sub : rawMesh.subMeshes) {
+			mesh->subMeshes.push_back({});
+
+			SubMeshGPU& subMesh = mesh->subMeshes.back();
+
+			subMesh.vertexCount = sub.vertexCount;
+			subMesh.vertexOffset = sub.vertexOffset;
+
+			subMesh.indexCount = sub.indexCount;
+			subMesh.indexOffset = sub.indexOffset;
+		}
 
 		MeshHandle handle = m_MeshMap.size() + 1;
 		m_MeshMap[handle] = mesh;

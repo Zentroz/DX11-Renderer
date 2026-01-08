@@ -112,7 +112,7 @@ float3 CookTorranceBRDF(
     float3 kD = 1 - F;
     kD *= 1 - metallic;
     
-    float Lo = (kD * albedo / PI + specular) * radiance * NdotL;
+    float3 Lo = (kD * albedo / PI + specular) * radiance * NdotL;
 
     float3 ambient = 0.3 * albedo;
     float3 color = ambient + Lo;

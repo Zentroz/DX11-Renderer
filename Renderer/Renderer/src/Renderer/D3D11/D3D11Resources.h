@@ -8,12 +8,21 @@ namespace zRender {
 		virtual void Release() = 0;
 	};
 
+	struct SubMeshGPU {
+		UINT vertexOffset;
+		UINT vertexCount;
+
+		UINT indexOffset;
+		UINT indexCount;
+	};
+
 	struct D3D11Mesh : public D3D11Resource {
 		ID3D11Buffer* vertexBuffer = nullptr;
 		ID3D11Buffer* indexBuffer = nullptr;
-		UINT indexCount = 0;
-		UINT stride = 0;
-		UINT offset = 0;
+
+		UINT vertexStride = 0;
+
+		std::vector<SubMeshGPU> subMeshes;
 
 		void Release() override {
 			if (vertexBuffer) {

@@ -1,6 +1,14 @@
 #include"common.hlsl"
 #include"lighting.hlsl"
 
+cbuffer MaterialData : register(b2)
+{
+    float4 diffuseColor;
+    float roughness;
+    float metallic;
+    float2 padding;
+};
+
 struct VSInput
 {
     float3 pos : POSITION;

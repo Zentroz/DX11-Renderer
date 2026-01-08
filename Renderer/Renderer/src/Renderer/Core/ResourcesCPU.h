@@ -2,6 +2,7 @@
 
 #include<vector>
 #include<string>
+#include<DirectXMath.h>
 
 #include"Renderer/Core/Math.h"
 
@@ -17,13 +18,25 @@ namespace zRender {
 		vec2 uv;
 	};
 
+	struct SubMesh {
+		std::string name;
+
+		uint32_t vertexOffset;
+		uint32_t vertexCount;
+		uint32_t indexOffset;
+		uint32_t indexCount;
+
+		DirectX::XMMATRIX localModel;
+	};
+
 	struct MeshCPU : public ResourceCPU {
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
-		uint64_t indexCount;
+
+		std::vector<SubMesh> subMeshes;
 	};
 
-	struct ShaderCPU {
+	struct ShaderCPU : public ResourceCPU {
 		std::string vertexShaderSrc;
 		std::string pixelShaderSrc;
 		uint32_t inputLayout;

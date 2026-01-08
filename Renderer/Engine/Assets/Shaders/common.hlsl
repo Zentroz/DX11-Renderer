@@ -12,13 +12,6 @@ cbuffer ObjectData : register(b2)
 {
     matrix modelMatrix;
 };
-cbuffer MaterialData : register(b2)
-{
-    float4 diffuseColor;
-    float roughness;
-    float metallic;
-    float2 padding;
-};
 // Phone lighting material parameters
 // cbuffer MaterialData : register(b2) {
 //     float4 diffuseColor;

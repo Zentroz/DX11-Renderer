@@ -1,5 +1,13 @@
 #include"common.hlsl"
 
+cbuffer MaterialData : register(b2)
+{
+    float4 diffuseColor;
+    float roughness;
+    float metallic;
+    float2 padding;
+};
+
 struct VSInput
 {
     float3 pos : POSITION;
@@ -91,7 +99,7 @@ GBufferOut PSMain(VSOutput input)
     
     float3 encodedNormals = normalWS * 0.5f + 0.5f;;
     
-    o.albedo = float4(diffuse, 1);
+    o.albedo = float4(GammaCorrection(diffuse, 1.1), 1);
     o.normal = float4(encodedNormals, 1);
     o.material = float4(roughness, metallic, 0, 1);
     

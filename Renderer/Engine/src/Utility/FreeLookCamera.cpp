@@ -10,7 +10,7 @@ using namespace DirectX;
 constexpr float DEG2RAD = 3.14159265 / 180.0f;
 
 FreelookCamera::FreelookCamera() 
-	: pitch(0), yaw(0), m_Camera(1536, 793, 60.0f, 0.01f, 20.0f) 
+	: pitch(0), yaw(0), m_Camera(1536, 793, 60.0f, 0.01f, 100.0f) 
 {
 	m_Camera.renderMode = zRender::Camera::Perspective;
 }
@@ -39,10 +39,10 @@ void FreelookCamera::Update() {
 		zRender::vec3::normalize(m_Camera.forward);
 	}
 
-	XMVECTOR fw = XMVectorSet(m_Camera.position.x, m_Camera.position.y, m_Camera.position.z, 0);
+	XMVECTOR fw = XMVectorSet(m_Camera.forward.x, m_Camera.forward.y, m_Camera.forward.z, 0);
 	XMVECTOR wUp = XMVectorSet(0, 1, 0, 0);
 
-	XMVECTOR rg = XMVector3Cross(fw, wUp);
+	XMVECTOR rg = -XMVector3Cross(fw, wUp);
 
 	zRender::vec3 right = { XMVectorGetX(rg), XMVectorGetY(rg), XMVectorGetZ(rg) };
 	zRender::vec3::normalize(right);

@@ -22,7 +22,7 @@ namespace zRender {
         virtual void BindTextureVS(uint32_t slot, TextureHandle handle) = 0;
         virtual void BindTexturePS(uint32_t slot, TextureHandle handle) = 0;
         virtual void BindPipeline(const PipelineStateContainer& pipelineState) = 0;
-        virtual void DrawGeometryIndexed(MeshHandle handle) = 0;
+        virtual void DrawGeometryIndexed(MeshHandle handle, uint32_t subMeshIndex) = 0;
         virtual void DrawIndexed(uint64_t count) = 0;
         virtual void Draw(uint64_t count) = 0;
 

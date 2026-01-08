@@ -24,11 +24,6 @@ project "Engine"
        "ImGui"
    }
 
-   -- postbuildcommands {
-   --     "{COPY} vendor/assimp/lib/assimp-vc143-mt.dll %{cfg.targetdir}"
-   -- }
-
-
    filter "configurations:Debug"
       runtime "Debug"
       staticruntime "off"
@@ -38,7 +33,7 @@ project "Engine"
       }
 
       links {
-          "assimp-vc145-mtd"
+          "assimp-vc142-mtd"
       }
 
    filter "configurations:Release"

@@ -10,9 +10,18 @@
     <Filter Include="Render">
       <UniqueIdentifier>{C5BB87CE-B15D-B2A4-9A18-C6F8865939F5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RenderGraph">
+      <UniqueIdentifier>{57D96100-C38E-DAF5-4C83-D4CCB837D1F9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RenderPasses">
+      <UniqueIdentifier>{F4BC7120-E01F-01C5-89A5-397B75E7CC47}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Renderer\Core\Handles.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\Core\Helpers.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\Core\Math.h">
@@ -45,6 +54,9 @@
     <ClInclude Include="src\Renderer\Render\PipelineStateContainer.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="src\Renderer\Render\RenderConstantBuffers.h">
+      <Filter>Render</Filter>
+    </ClInclude>
     <ClInclude Include="src\Renderer\Render\RenderContextInterface.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -60,16 +72,25 @@
     <ClInclude Include="src\Renderer\Render\ResourceProviderInterface.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="src\Renderer\RenderGraph\RenderGraph.h">
+      <Filter>RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\RenderPasses\GBufferDebugPass.h">
+      <Filter>RenderPasses</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\RenderPasses\GBufferPass.h">
+      <Filter>RenderPasses</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\RenderPasses\LightingPass.h">
+      <Filter>RenderPasses</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\RenderPasses\PresentPass.h">
+      <Filter>RenderPasses</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer\RenderPasses\ShadowPass.h">
+      <Filter>RenderPasses</Filter>
+    </ClInclude>
     <ClInclude Include="src\Renderer\Renderer.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\GBufferPass.h" />
-    <ClInclude Include="src\Renderer\Render\RenderConstantBuffers.h" />
-    <ClInclude Include="src\Renderer\RenderGraph\RenderGraph.h" />
-    <ClInclude Include="src\Renderer\Core\Macros.h" />
-    <ClInclude Include="src\Renderer\Core\Helpers.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\GBufferDebugPass.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\PresentPass.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\LightingPass.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\ShadowPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp">
@@ -84,12 +105,24 @@
     <ClCompile Include="src\Renderer\Render\Camera.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="src\Renderer\RenderGraph\RenderGraph.cpp">
+      <Filter>RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\RenderPasses\GBufferDebugPass.cpp">
+      <Filter>RenderPasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\RenderPasses\GBufferPass.cpp">
+      <Filter>RenderPasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\RenderPasses\LightingPass.cpp">
+      <Filter>RenderPasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\RenderPasses\PresentPass.cpp">
+      <Filter>RenderPasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\RenderPasses\ShadowPass.cpp">
+      <Filter>RenderPasses</Filter>
+    </ClCompile>
     <ClCompile Include="src\Renderer\Renderer.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\GBufferPass.cpp" />
-    <ClCompile Include="src\Renderer\RenderGraph\RenderGraph.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\GBufferDebugPass.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\PresentPass.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\LightingPass.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\ShadowPass.cpp" />
   </ItemGroup>
 </Project>

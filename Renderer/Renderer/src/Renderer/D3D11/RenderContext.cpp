@@ -85,12 +85,7 @@ namespace zRender {
 		SetViewport(1536, 793);
 	}
 
-	void BindMesh(const D3D11Mesh& mesh, ID3D11DeviceContext* context) {
-		context->IASetVertexBuffers(0, 1, &mesh.vertexBuffer, &mesh.stride, &mesh.offset);
-		context->IASetIndexBuffer(mesh.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	}
-
-	void D3D11RenderContext::DrawGeometryIndexed(MeshHandle handle) {
+	void D3D11RenderContext::DrawGeometryIndexed(MeshHandle handle, uint32_t subMeshIndex) {
 		if (handle == InvalidHandle) return;
 
 		D3D11Mesh* mesh = resourceProvider->GetResource<D3D11Mesh>(handle);
@@ -100,9 +95,15 @@ namespace zRender {
 			return;
 		}
 
-		BindMesh(*mesh, context);
+		UINT offset = 0;
+		UINT stride = mesh->vertexStride;
 
-		context->DrawIndexed(mesh->indexCount, 0, 0);
+		context->IASetVertexBuffers(0, 1, &mesh->vertexBuffer, &stride, &offset);
+		context->IASetIndexBuffer(mesh->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		const auto& subMesh = mesh->subMeshes[subMeshIndex];
+
+		context->DrawIndexed(subMesh.indexCount, subMesh.indexOffset, subMesh.vertexOffset);
 	}
 
 	void D3D11RenderContext::Draw(uint64_t count) {

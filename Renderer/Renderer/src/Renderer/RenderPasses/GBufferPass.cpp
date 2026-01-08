@@ -43,9 +43,9 @@ namespace zRender {
 
 		for (auto& item : ctx.renderItems) {
 			MaterialData mData;
-			mData.diffuseColor = item.material.diffuseColor;
-			mData.metallic = item.material.metallic;
-			mData.roughness = item.material.roughness;
+			mData.diffuseColor = item.materialData.baseColor;
+			mData.roughness = item.materialData.roughness;
+			mData.metallic = item.materialData.metallic;
 
 			ObjectData oData;
 			oData.modelMatrix = DirectX::XMMatrixTranspose(item.modelMatrix);
@@ -55,9 +55,14 @@ namespace zRender {
 
 			ctx.ctx->BindBufferVS(2, objectBufferHandle);
 			ctx.ctx->BindBufferPS(2, materialBufferHandle);
-			ctx.ctx->BindTexturePS(0, item.material.diffuseTexHandle);
-			ctx.ctx->BindTexturePS(1, item.material.normalTexHandle);
-			ctx.ctx->DrawGeometryIndexed(item.meshHandle);
+			
+			for (uint8_t i = 0; i < 16; i++) {
+				if (i >= item.materialData.textureHandles.size()) break;
+
+				ctx.ctx->BindTexturePS(i, item.materialData.textureHandles[i]);
+			}
+
+			ctx.ctx->DrawGeometryIndexed(item.meshHandle, item.subMeshIndex);
 		}
 	}
 }
