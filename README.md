@@ -34,13 +34,6 @@ Materials support both traditional lighting and a simplified PBR workflow using 
 
 Render passes are organized through a lightweight render graph to control execution order and resource dependencies.
 
-## Concepts Learned
-* CPU–GPU data flow using constant buffers
-* Transparent object rendering and draw order considerations
-* Tangent–Bitangent–Normal (TBN) matrix usage for normal mapping
-* Deferred rendering and multi-pass rendering workflows
-* Core PBR principles such as energy conservation and material response
-
 ## Borrowed Code
 WinAPI header optimization adapted from the [Chili Framework](https://wiki.planetchili.net/index.php/Chili_Framework)
 
