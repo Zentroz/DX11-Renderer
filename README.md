@@ -30,7 +30,7 @@ The engine initializes DirectX 11 device, and swap chain. Also resource provider
 A deferred rendering approach is used, where geometry data is written to G-buffers and lighting is computed in a separate pass.
 
 Per-frame and per-object data are uploaded using constant buffers.
-Materials support both traditional lighting and a simplified PBR workflow using metallic and roughness parameters.
+Materials support simplified PBR workflow using metallic and roughness parameters.
 
 Render passes are organized through a lightweight render graph to control execution order and resource dependencies.
 
