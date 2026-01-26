@@ -48,7 +48,7 @@ WinAPI header optimization adapted from the [Chili Framework](https://wiki.plane
 * Premake5
 
 ````bash
-git clone <repository-url>
+git clone https://github.com/Zentroz/DX11-Renderer.git
 cd DX11-Renderer
 premake5 vs2022
 ````
