@@ -1,4 +1,4 @@
-# DX11-Renderer
+# Overview
 A small real-time renderer built using DirectX 11 to explore and implement modern rendering techniques such as deferred rendering, lighting models, and GPU resource management.
 
 
