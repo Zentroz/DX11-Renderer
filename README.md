@@ -14,7 +14,7 @@ A small real-time renderer built using DirectX 11 to explore and implement moder
 * Deferred rendering pipeline
 * Normal mapping
 * Shadow mapping
-* Transparent mesh rendering
+* Alpha Clipping & Transparent mesh rendering
 * Multiple light types (directional, point, spot)
 
 ### Lighting Models
