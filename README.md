@@ -1,6 +1,7 @@
 # Overview
 A small real-time renderer built using DirectX 11 to explore and implement modern rendering techniques such as deferred rendering, lighting models, and GPU resource management.
 
+<img width="1918" height="940" alt="renderer-1" src="https://github.com/user-attachments/assets/77cadefa-507e-49d9-9fb6-dbf9bb983299" />
 
 ## Features
 ### Core
@@ -23,6 +24,12 @@ A small real-time renderer built using DirectX 11 to explore and implement moder
 ### Tools & Architecture
 * Simple render graph to organize render passes
 * Interactive editor for inspecting scenes and modifying material properties
+
+## G-Buffers
+<img width="3836" height="1886" alt="renderer-gbuffers" src="https://github.com/user-attachments/assets/ebc9f7c0-062b-4823-a8b8-a30113a5246b" />
+
+## Aplha Clipping / Blending
+<img width="1422" height="950" alt="renderer-aplha" src="https://github.com/user-attachments/assets/7c4bdf2e-7fe6-49d5-ab7b-4604d976ba1c" />
 
 ## Technical Overview
 The engine initializes DirectX 11 device, and swap chain. Also resource provider and render context which are provided to renderer.
