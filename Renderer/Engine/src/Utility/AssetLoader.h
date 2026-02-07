@@ -1,6 +1,7 @@
 #pragma once
 
 #include<string>
+#include<unordered_map>
 #include<Renderer/Core/Handles.h>
 #include<Renderer/Core/ResourcesCPU.h>
 
@@ -33,19 +34,36 @@ struct ModelAsset {
 
 	zRender::MeshCPU* mesh = nullptr;
 
+	struct LoadedTexture {
+		enum TextureType {
+			TextureType_Albedo, TextureType_Normal, TextureType_Metal, TextureType_Rough, 
+			TextureType_RoughMetal_RG, TextureType_MetalRough_RG, TextureType_ORM_RGB
+		} type;
+		std::string name;
+		
+	};
+
+	std::unordered_map<std::string, zRender::TextureCPU*> textures;
+
 	struct Material {
 		std::string name;
+
+		enum RenderMode {
+			Opaque,
+			AplhaTest,
+			Transparent
+		} renderMode;
 
 		std::vector<uint32_t> subMeshIndices;
 
 		zRender::vec4 baseColor;
-		float roughness;
-		float metallic;
+		float roughnessFactor;
+		float metallicFactor;
+		float aplhaCutoff;
 
-		zRender::TextureCPU* diffuseTexture = nullptr;
-		zRender::TextureCPU* normalTexture = nullptr;
-		zRender::TextureCPU* metallicTexture = nullptr;
-		zRender::TextureCPU* roughnessTexture = nullptr;
+		std::string albedoTextureName;
+		std::string normalTextureName;
+		std::string rmTextureName;
 	};
 
 	std::vector<Material> materials;
@@ -53,6 +71,7 @@ struct ModelAsset {
 	DirectX::XMMATRIX modelMatrix;
 
 	~ModelAsset();
+	void Dispose();
 };
 
 class ModelLoader {

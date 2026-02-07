@@ -9,6 +9,10 @@ namespace zRender {
 		Handle materialRT;
 		Handle depthRT;
 
+		Handle whiteTextureHandle;
+
+		BufferHandle staticBufferHandle;
+		BufferHandle frameBufferHandle;
 		BufferHandle objectBufferHandle;
 		BufferHandle materialBufferHandle;
 
@@ -26,9 +30,18 @@ namespace zRender {
 		Handle materialRT;
 		Handle depthRT;
 
+		Handle whiteTextureHandle;
+
+		BufferHandle staticBufferHandle;
+		BufferHandle frameBufferHandle;
 		BufferHandle objectBufferHandle;
 		BufferHandle materialBufferHandle;
 
 		PipelineStateContainer pipelineStateHandles;
+
+		float totalTime = 0.0f;
+
+	private:
+		void Render(IRenderContext* ctx, const std::vector<RenderItem>& items);
 	};
 }

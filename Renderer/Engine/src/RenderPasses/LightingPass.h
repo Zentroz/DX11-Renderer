@@ -17,6 +17,7 @@ namespace zRender {
 			Handle shadowDSV;
 			Handle outputRT;
 
+			BufferHandle lightBufferHandle;
 			BufferHandle matricesBufferHandle;
 
 			PipelineStateContainer pipeline;
@@ -37,6 +38,7 @@ namespace zRender {
 		Handle shadowDSV;
 		Handle outputRT;
 
+		BufferHandle lightBufferHandle;
 		BufferHandle matricesBufferHandle;
 
 		PipelineStateContainer pipeline;

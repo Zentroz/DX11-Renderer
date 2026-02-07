@@ -8,6 +8,6 @@ namespace zRender {
         virtual ~GraphicsDevice() = default;
 
         virtual void Initialize(void* windowHandle) = 0;
-        virtual void Shutdown() = 0;
+        virtual void Release() = 0;
     };
 }

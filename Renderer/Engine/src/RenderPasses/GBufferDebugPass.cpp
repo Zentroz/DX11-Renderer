@@ -1,4 +1,4 @@
-#include"Renderer/RenderPasses/GBufferDebugPass.h"
+#include"RenderPasses/GBufferDebugPass.h"
 
 namespace zRender {
 	GBufferDebugPass::GBufferDebugPass(const GBufferDebug& data) 

@@ -89,7 +89,7 @@ float4 PSMain(VSOutput input) : SV_Target
 	}
     
 	float3 viewDir = normalize(cameraPosition - input.fragPos).xyz;
-    float3 color = CookTorranceBRDF(diffuse, metallic, roughness, normalWS, viewDir, normalize(mainLightDirection.xyz), mainLightColor.rgb);
+    float3 color = CookTorranceBRDF(diffuse, metallic, roughness, normalWS, viewDir, normalize(mainLightDirection.xyz), 1, mainLightColor.rgb);
 
     float gamma = 1.5;
     float3 gammaCorrected = GammaCorrection(color, gamma);

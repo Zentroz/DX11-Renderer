@@ -10,23 +10,25 @@
 struct Material {
 	std::string name;
 
-	ShaderHandle shaderHandle = InvalidHandle;
-	TextureHandle diffuseTexture = InvalidHandle;	// -- Slot t0
-	TextureHandle normalTexture = InvalidHandle;	// -- Slot t1
-	TextureHandle metallicTexture = InvalidHandle;	// -- Slot t2
-	TextureHandle roughnessTexture = InvalidHandle;	// -- Slot t3
+	ShaderHandle shaderHandle{};
+	TextureHandle albedo{};
+	TextureHandle normal{};
+	TextureHandle orm{}; // R = AO, G = Roughness, B = Metallic
 
 	zRender::vec4 baseColor;
-	float roughness;
-	float metallic;
+	float roughnessFactor;
+	float metallicFactor;
+	float aplhaCutoff;
+
+	enum RenderMode { Opaque, AplhaTest, Transparent } renderMode;
 };
 
 struct Model {
-	MeshHandle meshHandle = InvalidHandle;
+	MeshHandle meshHandle{};
 	
 	struct SubMesh {
 		uint32_t submeshIndex;
-		Handle materialHandle = InvalidHandle;
+		Handle materialHandle{};
 		DirectX::XMMATRIX localModelMatrix;
 	};
 
@@ -68,7 +70,7 @@ T* AssetManager::Get(Handle h) {
 
 template<typename T>
 Handle AssetManager::Add(std::shared_ptr<T> asset) {
-	Handle h = ++m_AssetCount;
+	Handle h = uuid::Build();
 
 	m_Assets[h] = static_cast<std::shared_ptr<zRender::ResourceCPU>>(asset);
 

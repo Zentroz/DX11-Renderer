@@ -1,9 +1,9 @@
-#include"Renderer/RenderPasses/LightingPass.h"
+#include"RenderPasses/LightingPass.h"
 
 namespace zRender {
 	LightingPass::LightingPass(const InitData& i)
 		: albedoRT(i.albedoRT), normalRT(i.normalRT), materialRT(i.materialRT), depthRT(i.depthRT), outputRT(i.outputRT), 
-		shadowDSV(i.shadowDSV), matricesBufferHandle(i.matricesBufferHandle), pipeline(i.pipeline)
+		shadowDSV(i.shadowDSV), lightBufferHandle(i.lightBufferHandle), matricesBufferHandle(i.matricesBufferHandle), pipeline(i.pipeline)
 	{}
 
 	RenderPassDesc LightingPass::GetDesc() const {
@@ -25,11 +25,20 @@ namespace zRender {
 		float clearColor[4] = { 1, 0, 0, 1 };
 		ctx.ctx->ClearRenderTarget(outputRT, clearColor);
 
+		LightData lData{};
+		lData.lightCount.x = ctx.lightCount;
+		for (size_t i = 0; i < ctx.lightCount; i++) {
+			lData.lights[i] = ctx.lights[i];
+		}
+
 		MatricesBufferData mData;
 		mData.invViewProj = DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, ctx.renderCamera.ViewMatrix() * ctx.renderCamera.ProjMatrix()));
 
+		ctx.ctx->UpdateBuffer(lightBufferHandle, sizeof(LightData), &lData);
 		ctx.ctx->UpdateBuffer(matricesBufferHandle, sizeof(MatricesBufferData), &mData);
+
 		ctx.ctx->BindBufferPS(2, matricesBufferHandle);
+		ctx.ctx->BindBufferPS(3, lightBufferHandle);
 
 		ctx.ctx->BindPipeline(pipeline);
 		ctx.ctx->Draw(3);

@@ -9,6 +9,7 @@
 namespace zRender {
 	struct ResourceCPU {
 		virtual ~ResourceCPU() = default;
+		std::string name;
 	};
 
 	struct Vertex {
@@ -46,5 +47,16 @@ namespace zRender {
 		unsigned char* pixels;
 		int width, height, channels;
 		uint32_t usageFlags;
+		enum FilterMode {
+			Point = 0,
+			Linear = 1
+		} filterMode;
+
+		~TextureCPU() {
+			if (pixels) {
+				delete pixels;
+				pixels = nullptr;
+			}
+		}
 	};
 }

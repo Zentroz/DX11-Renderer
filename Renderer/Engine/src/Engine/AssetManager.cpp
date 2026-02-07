@@ -5,7 +5,7 @@
 using namespace zRender;
 
 Handle AssetManager::AddMaterial(Material& mat) {
-	Handle h = ++m_MaterialCount;
+	Handle h = uuid::Build();
 
 	m_Materials[h] = mat;
 
@@ -29,7 +29,7 @@ std::vector<Material*> AssetManager::GetAllMaterials() {
 }
 
 Handle AssetManager::AddModel(Model& model) {
-	Handle h = ++m_ModelCounts;
+	Handle h = uuid::Build();
 
 	m_Models[h] = model;
 

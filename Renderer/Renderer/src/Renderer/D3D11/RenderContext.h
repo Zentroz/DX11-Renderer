@@ -10,6 +10,11 @@ namespace zRender {
     class D3D11RenderContext final : public IRenderContext {
     public:
         D3D11RenderContext(ID3D11DeviceContext* context, IDXGISwapChain* swapChain, D3D11ResourceProvider* resourceProvider);
+        ~D3D11RenderContext() = default;
+
+        void SetScreenSize(int width, int height);
+
+        void Set(ID3D11DeviceContext* context, IDXGISwapChain* swapChain);
 
         void UpdateBuffer(BufferHandle handle, UINT byteWidth, void* data) override;
         void ClearStatesAndResources() override;
@@ -32,6 +37,8 @@ namespace zRender {
         void EndFrame() override;
 
     private:
+        int width, height;
+
         IDXGISwapChain* swapChain = nullptr;
         ID3D11DeviceContext* context = nullptr;
         D3D11ResourceProvider* resourceProvider = nullptr;

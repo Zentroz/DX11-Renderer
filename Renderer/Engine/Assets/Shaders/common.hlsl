@@ -7,6 +7,7 @@ cbuffer FrameData : register(b1)
 {
     matrix vpMatrix;
     float4 cameraPosition;
+	float4 time; // x = delta, y = total
 };
 cbuffer ObjectData : register(b2)
 {

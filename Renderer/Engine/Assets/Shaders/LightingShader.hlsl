@@ -33,10 +33,10 @@ float LinearizeDepth(float z, float near, float far)
     return near * far / (far - z * (far - near));
 }
 
-float DepthToScreen(float depth)
+float DepthToScreen(float depth, float nearPlane, float farPlane)
 {
-    float z = LinearizeDepth(depth, 0.1, 20);
-    z /= 20.0f;
+    float z = LinearizeDepth(depth, nearPlane, farPlane);
+    z /= farPlane;
     z = 1.0 - z;
     return z;
 }
@@ -65,21 +65,31 @@ float4 PSMain(float4 pos : SV_Position) : SV_Target
     float4 albedoSample = albedoTex.Sample(samp, uv);
     float4 normalSample = normalTex.Sample(samp1, uv);
     float4 materialSample = materialTex.Sample(samp2, uv);
-    float shadowDepth = shadowDepthTex.Sample(samp4, uv).r;
     float depth = depthTex.Sample(samp3, uv).r;
     
-    float roughness = max(materialSample.r, 0.15);
-    float metallic = materialSample.g;
+	float ao = materialSample.r;
+    float roughness = materialSample.g;
+    float metallic = materialSample.b;
     
     float3 worldPosition = PositionFromDepth(uv, depth);
 
-    float3 N = normalSample.xyz * 2.0f - 1.0f;;
-    float3 L = normalize(mainLightDirection.xyz);
+    //float3 N = normalSample.xyz * 2.0f - 1.0f;
+    float3 N = normalSample.xyz;
     float3 V = normalize(cameraPosition.xyz - worldPosition);
     
-    float3 color = CookTorranceBRDF(albedoSample.xyz, metallic, roughness, N, V, L, mainLightColor.rgb);
-    // float3 color = CalculatePhongLighting(N, worldPosition, cameraPosition.xyz, mainLightDirection.xyz, mainLightColor.rgb, float3(0, 0, 0), 0);
-    float4 result = float4(color, 1);
+	float3 Lo = 0;
+    
+	for (int i = 0; i < lightCount.x; i++)
+	{
+		float3 L = GetLightDirection(i, worldPosition);
+		Lo += CookTorranceBRDF(albedoSample.xyz, metallic, roughness, N, V, L, CalculateLightIntensity(lights[i], worldPosition), mainLightColor.rgb);
+	}
+
+	float3 ambient = 0.3 * albedoSample.xyz;
+	float3 finalColor = ambient + Lo;
+	//float3 finalColor = lights[0].lightProp.y;
+    
+	float4 result = float4(finalColor, 1);
 
     return result;
 }

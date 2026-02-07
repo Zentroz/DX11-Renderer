@@ -3,10 +3,20 @@
 const float bgColor[4] = { 0.1f, 0.1f, 0.25f, 1.0f };
 
 namespace zRender {
+	void D3D11RenderContext::Set(ID3D11DeviceContext* context, IDXGISwapChain* swapChain) {
+		this->context = context;
+		this->swapChain = swapChain;
+	}
+
 	D3D11RenderContext::D3D11RenderContext(ID3D11DeviceContext* context, IDXGISwapChain* swapChain, D3D11ResourceProvider* resourceProvider) :
 		context(context), swapChain(swapChain), resourceProvider(resourceProvider) {
 
 		//depthStencil = resourceProvider->CreateDepthStencilView();
+	}
+
+	void D3D11RenderContext::SetScreenSize(int width, int height) {
+		this->width = width;
+		this->height = height;
 	}
 
 	void D3D11RenderContext::ClearRenderTarget(TextureHandle handle, float clearColor[4]) {
@@ -32,6 +42,10 @@ namespace zRender {
 		views.reserve(renderViewCount);
 
 		for (size_t i = 0; i < renderViewCount; i++) {
+			if (renderViews[i].isNull()) {
+				views.clear();
+				continue;
+			}
 			D3D11Texture* texture = resourceProvider->GetResource<D3D11Texture>(renderViews[i]);
 			ID3D11RenderTargetView* rtv = texture->renderTargetView;
 			views.push_back(rtv);
@@ -40,16 +54,16 @@ namespace zRender {
 
 		ID3D11DepthStencilView* dsv = nullptr;
 
-		if (depthView != InvalidHandle) {
+		if (!depthView.isNull()) {
 			auto tex = resourceProvider->GetResource<D3D11Texture>(depthView);
 			dsv = tex->depthStencilView;
 		}
 
-		context->OMSetRenderTargets(renderViewCount, views.data(), dsv);
+		context->OMSetRenderTargets(views.size(), views.data(), dsv);
 	}
 
 	void D3D11RenderContext::UpdateBuffer(BufferHandle h, UINT byteWidth, void* data) {
-		if (h == InvalidHandle) return;
+		if (h.isNull()) return;
 
 		ID3D11Buffer* cBuffer = nullptr;
 		if ((cBuffer = resourceProvider->GetBuffer(h)) == nullptr) return;
@@ -82,11 +96,11 @@ namespace zRender {
 	}
 
 	void D3D11RenderContext::BeginFrame() {
-		SetViewport(1536, 793);
+		SetViewport(width, height);
 	}
 
 	void D3D11RenderContext::DrawGeometryIndexed(MeshHandle handle, uint32_t subMeshIndex) {
-		if (handle == InvalidHandle) return;
+		if (handle.isNull()) return;
 
 		D3D11Mesh* mesh = resourceProvider->GetResource<D3D11Mesh>(handle);
 
@@ -129,7 +143,7 @@ namespace zRender {
 	}
 
 	void D3D11RenderContext::BindBufferVS(uint32_t slot, BufferHandle handle) {
-		if (handle == InvalidHandle) return;
+		if (handle.isNull()) return;
 
 		ID3D11Buffer* buffer = resourceProvider->GetBuffer(handle);
 		if (!buffer) printf("No Buffer to bind to VS of, Handle: %d \n", handle);
@@ -137,7 +151,7 @@ namespace zRender {
 	}
 
 	void D3D11RenderContext::BindBufferPS(uint32_t slot, BufferHandle handle) {
-		if (handle == InvalidHandle) return;
+		if (handle.isNull()) return;
 
 		ID3D11Buffer* buffer = resourceProvider->GetBuffer(handle);
 		if (!buffer) printf("No Buffer to bind to PS of, Handle: %d \n", handle);
@@ -181,9 +195,9 @@ namespace zRender {
 		D3D11Shader* shader = resourceProvider->GetResource<D3D11Shader>(pipelineState.shaderHandle);
 		ID3D11RasterizerState* rasterizer = resourceProvider->GetRasterizerState(pipelineState.rasterizerHandle);
 		ID3D11DepthStencilState* depthStencil = resourceProvider->GetDepthStencilState(pipelineState.depthStencilHandle);
-		if (!shader) printf("No Shader to bind.\n");
-		if (!rasterizer) printf("No Rasterizer to bind.\n");
-		if (!depthStencil) printf("No DepthStencilState to bind.\n");
+		ID3D11BlendState* blendState = resourceProvider->GetBlendState(pipelineState.blendHandle);
+
+		context->OMSetBlendState(blendState, nullptr, 0xFFFFFFFFu);
 
 		context->OMSetDepthStencilState(depthStencil, 0);
 
@@ -191,9 +205,9 @@ namespace zRender {
 
 		context->IASetPrimitiveTopology(MyPrimitiveTopologyToD3D11(pipelineState.topology));
 
-		context->IASetInputLayout(shader->inputLayout);
+		context->IASetInputLayout(shader ? shader->inputLayout : nullptr);
 
-		context->VSSetShader(shader->vertexShader, nullptr, 0);
-		context->PSSetShader(shader->pixelShader, nullptr, 0);
+		context->VSSetShader(shader ? shader->vertexShader : nullptr, nullptr, 0);
+		context->PSSetShader(shader ? shader->pixelShader : nullptr, nullptr, 0);
 	}
 }

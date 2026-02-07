@@ -1,5 +1,10 @@
 #include"common.hlsl"
 
+cbuffer ShadowPassData : register(b3) {
+    matrix invView;
+    matrix invProj;
+};
+
 struct VSInput
 {
     float3 pos : POSITION;

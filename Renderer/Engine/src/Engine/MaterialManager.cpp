@@ -1,7 +1,7 @@
 #include"Engine/MaterialManager.h"
 
 Handle MaterialManager::Add(const EngineMaterial& mat) {
-	Handle h = m_MaterialCounts + 1;
+	Handle h = uuid::Build();
 	m_MaterialCounts++;
 
 	m_Materials[h] = mat;
@@ -10,7 +10,7 @@ Handle MaterialManager::Add(const EngineMaterial& mat) {
 }
 
 EngineMaterial MaterialManager::Get(Handle handle) {
-	if (!m_Materials.contains(handle)) return {};
+	if (handle.isNull() || !m_Materials.contains(handle)) return {};
 
 	return m_Materials[handle];
 }

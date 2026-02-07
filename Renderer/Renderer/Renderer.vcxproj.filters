@@ -13,9 +13,6 @@
     <Filter Include="RenderGraph">
       <UniqueIdentifier>{57D96100-C38E-DAF5-4C83-D4CCB837D1F9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="RenderPasses">
-      <UniqueIdentifier>{F4BC7120-E01F-01C5-89A5-397B75E7CC47}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Renderer\Core\Handles.h">
@@ -72,25 +69,13 @@
     <ClInclude Include="src\Renderer\Render\ResourceProviderInterface.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\RenderGraph\RenderGraph.h">
+    <ClInclude Include="src\Renderer\Render\RenderGraph.h">
       <Filter>RenderGraph</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\RenderPasses\GBufferDebugPass.h">
-      <Filter>RenderPasses</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Renderer\RenderPasses\GBufferPass.h">
-      <Filter>RenderPasses</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Renderer\RenderPasses\LightingPass.h">
-      <Filter>RenderPasses</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Renderer\RenderPasses\PresentPass.h">
-      <Filter>RenderPasses</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Renderer\RenderPasses\ShadowPass.h">
-      <Filter>RenderPasses</Filter>
-    </ClInclude>
     <ClInclude Include="src\Renderer\Renderer.h" />
+    <ClInclude Include="src\Renderer\Core\ErrorLogger.h" />
+    <ClInclude Include="src\Renderer\Core\uuid.h" />
+    <ClInclude Include="src\Renderer\Core\Lights.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp">
@@ -105,24 +90,11 @@
     <ClCompile Include="src\Renderer\Render\Camera.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="src\Renderer\RenderGraph\RenderGraph.cpp">
+    <ClCompile Include="src\Renderer\Render\RenderGraph.cpp">
       <Filter>RenderGraph</Filter>
     </ClCompile>
-    <ClCompile Include="src\Renderer\RenderPasses\GBufferDebugPass.cpp">
-      <Filter>RenderPasses</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Renderer\RenderPasses\GBufferPass.cpp">
-      <Filter>RenderPasses</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Renderer\RenderPasses\LightingPass.cpp">
-      <Filter>RenderPasses</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Renderer\RenderPasses\PresentPass.cpp">
-      <Filter>RenderPasses</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Renderer\RenderPasses\ShadowPass.cpp">
-      <Filter>RenderPasses</Filter>
-    </ClCompile>
     <ClCompile Include="src\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Renderer\Core\uuid.cpp" />
+    <ClCompile Include="src\Renderer\Core\Math.cpp" />
   </ItemGroup>
 </Project>

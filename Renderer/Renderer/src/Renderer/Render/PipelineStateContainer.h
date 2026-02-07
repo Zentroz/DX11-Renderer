@@ -17,7 +17,7 @@ namespace zRender {
 
         RasterizerHandle rasterizerHandle;
         DepthStateHandle depthStencilHandle;
-        uint32_t blendHandle;
+        Handle blendHandle;
 
         PrimitiveTopology topology;
     };

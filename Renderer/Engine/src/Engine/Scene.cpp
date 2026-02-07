@@ -24,8 +24,14 @@ std::vector<zRender::RenderItem> Scene::GenerateDrawCalls() {
 
 			item.materialData.shaderHandle = mat.shaderHandle;
 			item.materialData.baseColor = mat.baseColor;
-			item.materialData.roughness = mat.roughness;
-			item.materialData.metallic = mat.metallic;
+			item.materialData.roughness = mat.roughnessFactor;
+			item.materialData.metallic = mat.metallicFactor;
+			item.materialData.aplhaCutoff = mat.aplhaCutoff;
+			item.materialData.renderMode = (zRender::RenderItem::Material::RenderMode)mat.renderMode;
+
+			item.materialData.textureHandles.push_back(mat.albedo);
+			item.materialData.textureHandles.push_back(mat.normal);
+			item.materialData.textureHandles.push_back(mat.orm);
 		}
 	}
 

@@ -7,12 +7,14 @@
 #include<memory>
 #include<unordered_map>
 
+#include"Renderer/Core/uuid.h"
 #include"Renderer/Core/ResourcesCPU.h"
 #include"Renderer/Core/Handles.h"
 #include"Renderer/D3D11/GraphicsDevice.h"
 #include"Renderer/D3D11/D3D11Resources.h"
 #include"Renderer/Render/ResourceProviderInterface.h"
 #include"Renderer/Render/PipelineStateContainer.h"
+#include"Renderer/Render/RenderPassInterface.h"
 
 namespace zRender {
 	enum InputLayout { InputLayout_None, InputLayout_PNTT, InputLayout_P };
@@ -20,20 +22,27 @@ namespace zRender {
 	class D3D11ResourceProvider : public IRenderResourceProvider {
 	private:
 		template <typename T>
-		using ResourceMap = std::unordered_map<uint32_t, std::shared_ptr<T>>;
+		using ResourceMap = std::unordered_map<uuid, std::shared_ptr<T>>;
 
 	public:
 		D3D11ResourceProvider(D3D11Device* pDevice);
+		~D3D11ResourceProvider() = default;
+
+		void ReleaseScreenTexture();
+		void RecreateScreenTextureHandle();
 
 		MeshHandle LoadMesh(const MeshCPU& rawMesh);
 		ShaderHandle LoadShader(const ShaderCPU& rawShader);
 		TextureHandle LoadTexture(const TextureCPU& rawTexture);
 		TextureHandle LoadTextureCubeMap(const TextureCPU rawTexture[6]);
 
-		TextureHandle CreateTexture(int width, int height, zRender::TextureFormat format, TextureUsageFlags usageFlags) override;
+		TextureHandle CreateTexture(int width, int height, TextureUsageFlags usageFlags, TextureFilter filter, vec4 initialColor);
+		TextureHandle CreateTexture(int width, int height, zRender::TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter) override;
+		void DestroyTexture(const uuid& id);
 
 		BufferHandle CreateBuffer(zRender::Buffer_Usage usage, int accessFlag, UINT byteWidth, void* initData) override;
 		ID3D11Buffer* GetBuffer(BufferHandle h);
+
 		RasterizerHandle GetRasteriserHandle(RasterizerCullMode cullMode, RasterizerFillMode fillMode) override;
 		RasterizerHandle CreateRasterizer(RasterizerCullMode cullMode, RasterizerFillMode fillMode);
 		ID3D11RasterizerState* GetRasterizerState(RasterizerHandle handle);
@@ -43,8 +52,11 @@ namespace zRender {
 		ID3D11DepthStencilState* GetDepthStencilState(DepthStateHandle handle);
 		ID3D11DepthStencilView* CreateDepthStencilView();
 
+		Handle CreateBlendState(bool blendEnable);
+		ID3D11BlendState* GetBlendState(Handle handle);
+
 		template <typename T>
-		T* GetResource(uint32_t handle);
+		T* GetResource(const Handle& h);
 
 	private:
 		D3D11Device* device = nullptr;
@@ -52,19 +64,20 @@ namespace zRender {
 		ResourceMap<D3D11Mesh> m_MeshMap;
 		ResourceMap<D3D11Shader> m_ShaderMap;
 		ResourceMap<D3D11Texture> m_TextureMap;
-		std::unordered_map<uint32_t, ID3D11RenderTargetView*> m_RenderTargetMap;
+		std::unordered_map<uuid, ID3D11RenderTargetView*> m_RenderTargetMap;
 		std::unordered_map<BufferHandle, ID3D11Buffer*> m_BufferMap;
 		std::unordered_map<DepthStateHandle, ID3D11DepthStencilState*> m_DepthStencilStateMap;
 		std::unordered_map<RasterizerHandle, ID3D11RasterizerState*> m_RasterizerStateMap;
+		std::unordered_map<Handle, ID3D11BlendState*> m_BlendStateMap;
 
 	private:
-		TextureHandle CreateTextureResource(ID3D11Texture2D* texture, TextureUsageFlags usageFlags);
+		TextureHandle CreateTextureResource(ID3D11Texture2D* texture, TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter);
 	};
 
 	template <typename T>
-	T* D3D11ResourceProvider::GetResource(uint32_t h) {
+	T* D3D11ResourceProvider::GetResource(const Handle& h) {
 		T* resource = nullptr;
-		if (h == InvalidHandle) return resource;
+		if (h.isNull()) return resource;
 
 		if (typeid(T) == typeid(D3D11Mesh)) {
 			if (!m_MeshMap.contains(h)) return resource;

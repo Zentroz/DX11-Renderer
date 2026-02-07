@@ -12,6 +12,7 @@ constexpr float DEG2RAD = 3.14159265 / 180.0f;
 FreelookCamera::FreelookCamera() 
 	: pitch(0), yaw(0), m_Camera(1536, 793, 60.0f, 0.01f, 100.0f) 
 {
+	m_Camera.position = zRender::vec3(0, 2, 0);
 	m_Camera.renderMode = zRender::Camera::Perspective;
 }
 

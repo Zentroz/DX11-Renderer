@@ -1,4 +1,5 @@
 #include"GraphicsDevice.h"
+#include "Renderer/Core/ErrorLogger.h"
 
 #include <cassert>
 
@@ -16,6 +17,32 @@ namespace zRender {
         int width = windowRect.right - windowRect.left;
         int height = windowRect.bottom - windowRect.top;
 
+        UINT creationFlags = 0;
+        D3D_FEATURE_LEVEL FeatureLevels = D3D_FEATURE_LEVEL_11_0;
+
+        D3D11CreateDevice(
+            NULL,
+            D3D_DRIVER_TYPE_HARDWARE,
+            NULL,
+            creationFlags,
+            &FeatureLevels,
+            1,
+            D3D11_SDK_VERSION,
+            &m_Device,
+            &FeatureLevel,
+            &m_Context
+        );
+
+        UINT quality = 0;
+        HRESULT hr = m_Device->CheckMultisampleQualityLevels(
+            DXGI_FORMAT_R8G8B8A8_UNORM,
+            4,
+            &quality
+        );
+
+        //bool supports4xMSAA = SUCCEEDED(hr) && quality > 0;
+        bool supports4xMSAA = false;
+
         DXGI_SWAP_CHAIN_DESC sd;
         ZeroMemory(&sd, sizeof(sd));
         sd.BufferCount = 1;
@@ -26,36 +53,33 @@ namespace zRender {
         sd.BufferDesc.RefreshRate.Denominator = 1;
         sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         sd.OutputWindow = hWnd;
-        sd.SampleDesc.Count = 1;
-        sd.SampleDesc.Quality = 0;
         sd.Windowed = TRUE;
+        sd.SampleDesc.Count = supports4xMSAA ? 4 : 1;
+        sd.SampleDesc.Quality = supports4xMSAA ? quality - 1 : 0;
 
-        D3D_FEATURE_LEVEL FeatureLevels = D3D_FEATURE_LEVEL_11_0;
+        IDXGIDevice* dxgiDevice;
+        m_Device->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice);
 
-        UINT creationFlags = 0;
+        IDXGIAdapter* adapter;
+        dxgiDevice->GetAdapter(&adapter);
 
-        //#ifdef _DEBUG
-        //    creationFlags |= D3D11_CREATE_DEVICE_DEBUG; // Add the debug flag
-        //#endif
+        IDXGIFactory* factory;
+        adapter->GetParent(__uuidof(IDXGIFactory), (void**)&factory);
 
-        D3D11CreateDeviceAndSwapChain(
-            NULL,
-            D3D_DRIVER_TYPE_HARDWARE,
-            NULL,
-            creationFlags,
-            &FeatureLevels,
-            1,
-            D3D11_SDK_VERSION,
-            &sd,
-            &m_SwapChain,
-            &m_Device,
-            &FeatureLevel,
-            &m_Context
-        );
+        factory->CreateSwapChain(m_Device.Get(), &sd, &m_SwapChain);
     }
 
-    void D3D11Device::Shutdown() {
+    void D3D11Device::Resize(int newWidth, int newHeight, bool isFullScreen) {
+        m_SwapChain->SetFullscreenState(isFullScreen, nullptr);
+        HRESULT hr = m_SwapChain->ResizeBuffers(0, newWidth, newHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+        FAILEDLOG(hr);
+        assert(SUCCEEDED(hr));
+    }
 
+    void D3D11Device::Release() {
+        m_Device->Release();
+        m_SwapChain->Release();
+        m_Context->Release();
     }
 
     ID3D11RenderTargetView* D3D11Device::CreateRenderTarget() {

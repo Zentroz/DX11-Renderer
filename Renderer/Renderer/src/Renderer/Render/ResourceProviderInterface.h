@@ -40,6 +40,10 @@ namespace zRender {
         // Special / fallback
         TextureFormat_Unknown
     };
+    enum TextureFilter {
+        Point,
+        Linear
+    };
 
     enum RasterizerFillMode {
         RasterizerFunc_FillMode_Solid,
@@ -65,7 +69,7 @@ namespace zRender {
     public:
         virtual ~IRenderResourceProvider() = default;
 
-        virtual TextureHandle CreateTexture(int width, int height, TextureFormat format, TextureUsageFlags usageFlags) = 0;
+        virtual TextureHandle CreateTexture(int width, int height, TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter) = 0;
         virtual BufferHandle CreateBuffer(Buffer_Usage usage, int accessFlag, uint32_t byteWidth, void* initData) = 0;
         virtual RasterizerHandle GetRasteriserHandle(RasterizerCullMode cullMode, RasterizerFillMode fillMode) = 0;
         virtual DepthStateHandle GetDepthStateHandle(DepthWriteMask write, DepthFunc func) = 0;
@@ -92,15 +96,15 @@ namespace zRender {
         }
 
     protected:
-        TextureHandle screenTextureHandle = InvalidHandle;
+        TextureHandle screenTextureHandle;
         std::vector<PipelineStateContainer> pipelineStates;
     private:
         struct NamedResourceHandle {
             std::string name;
             Handle handle;
         };
-        ShaderHandle geometryShaderHandle = InvalidHandle;
-        ShaderHandle lightingShaderHandle = InvalidHandle;
+        ShaderHandle geometryShaderHandle;
+        ShaderHandle lightingShaderHandle;
 
         std::vector<NamedResourceHandle> m_NamedResourceHandles;
     };

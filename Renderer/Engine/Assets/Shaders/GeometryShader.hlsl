@@ -3,9 +3,10 @@
 cbuffer MaterialData : register(b2)
 {
     float4 diffuseColor;
-    float roughness;
-    float metallic;
-    float2 padding;
+    float roughnessMultiplier;
+    float metallicMultipler;
+    float aplhaCutoff;
+    float padding;
 };
 
 struct VSInput
@@ -59,6 +60,9 @@ SamplerState diffSampler : register(s0);
 Texture2D normalMap : register(t1);
 SamplerState normalSampler : register(s1);
 
+Texture2D ormMap : register(t2);
+SamplerState ormSampler : register(s2);
+
 struct GBufferOut
 {
     float4 albedo : SV_Target0;
@@ -72,36 +76,47 @@ GBufferOut PSMain(VSOutput input)
 
 	// Texture Sample
     float4 diffuseSample = diffuseTex.Sample(diffSampler, input.uv);
-    float4 normalSample = normalMap.Sample(normalSampler, input.uv);
+
+	if (diffuseSample.a < aplhaCutoff)
+	{
+		discard;
+	}
+
+	float4 normalSample = normalMap.Sample(normalSampler, input.uv);
 
 	// Properties
-    float3 diffuse = diffuseColor;
-    float3 normalWS = normalize(input.normalWS);
-    float ao = 1;
+	float3 diffuse = diffuseColor;
+	float3 normalWS = normalize(input.normalWS);
+	float ao = 1;
     
-    if (!IsColorZero(diffuseSample))
-        diffuse = diffuse * diffuseSample.rgb;
-    if (!IsColorZero(normalSample))
-    {
-        float3 normalTS = normalSample.xyz * 2.0f - 1.0f;
+	if (!IsColorZero(diffuseSample))
+		diffuse = diffuse * diffuseSample.rgb;
+	if (!IsColorZero(normalSample))
+	{
+		float3 normalTS = normalSample.xyz * 2.0f - 1.0f;
 
-		// TBN
-        float3 N = normalWS;
-        float3 T = normalize(input.tangentWS);
-        T = normalize(T - dot(T, N) * N);
-        float3 B = cross(N, T);
+	    // TBN
+		float3 N = normalWS;
+		float3 T = normalize(input.tangentWS);
+		T = normalize(T - dot(T, N) * N);
+		float3 B = cross(N, T);
 
-        float3x3 TBN = float3x3(T, B, N);
+		float3x3 TBN = float3x3(T, B, N);
 
         // Transform to world space
-        normalWS = normalize(mul(normalTS, TBN));
-    }
+		normalWS = normalize(mul(normalTS, TBN));
+	}
     
-    float3 encodedNormals = normalWS * 0.5f + 0.5f;;
+    //float3 encodedNormals = normalWS * 0.5f + 0.5f;
     
-    o.albedo = float4(GammaCorrection(diffuse, 1.1), 1);
-    o.normal = float4(encodedNormals, 1);
-    o.material = float4(roughness, metallic, 0, 1);
+	o.albedo = float4(GammaCorrection(diffuse, 1.1), 1);
+	o.normal = float4(normalWS, 1);
+	float4 material = ormMap.Sample(ormSampler, input.uv);
+	material.r = 0;
+	material.g = material.g * roughnessMultiplier;
+	material.b = material.b * metallicMultipler;
+
+	o.material = material;
     
-    return o;
+	return o;
 }

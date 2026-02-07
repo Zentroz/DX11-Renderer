@@ -8,7 +8,7 @@
 #include"Renderer/Render/RenderContextInterface.h"
 #include"Renderer/Render/ResourceProviderInterface.h"
 #include"Renderer/Render/RenderConstantBuffers.h"
-#include"Renderer/RenderGraph/RenderGraph.h"
+#include"Renderer/Render/RenderGraph.h"
 
 namespace zRender {
 	class Renderer {
@@ -21,37 +21,28 @@ namespace zRender {
 
 		void Setup(IRenderContext* renderContext, IRenderResourceProvider* resourceProvider);
 		void SetCamera(Camera& cam);
-		void SetSkybox(TextureHandle textureHandle);
-		void SetPipelineShader(PipelineStateType pipelineStateType, TextureHandle shaderHandle);
 		void AddLight(Light light);
 
-		void RenderOpaque();
-		void RenderSkybox();
+		void AddRenderPass(IRenderPass* pass);
 
 		void InitRender();
 		void Render();
 		void EndRender();
 
-	private:
-		IRenderContext* m_RenderContext;
-		IRenderResourceProvider* resourceProvider;
-		std::vector<RenderItem> m_RenderQueue;
-		RenderGraph renderGraph;
-		PipelineStateContainer m_PipelineStates[8];
+		//void DestroyRenderPasses();
 
-		// Constant Buffers
-		BufferHandle staticBufferHandle = InvalidHandle;
-		BufferHandle frameBufferHandle = InvalidHandle;
-		BufferHandle objectBufferHandle = InvalidHandle;
-		BufferHandle materialBufferHandle = InvalidHandle;
-		BufferHandle skyboxBufferHandle = InvalidHandle;
+		IRenderPass* GetRenderPass(std::string passName);
+
+	private:
+		RenderGraph renderGraph;
+		std::vector<RenderItem> m_RenderQueueOpaque;
+		std::vector<RenderItem> m_RenderQueueAplhaTest;
+		std::vector<RenderItem> m_RenderQueueTransparent;
+		IRenderResourceProvider* resourceProvider;
+		IRenderContext* m_RenderContext;
 
 		Camera renderCamera;
-		Light m_Lights[32];
+		Light m_Lights[8];
 		int lightCount;
-		TextureHandle skyboxTextureHandle = InvalidHandle;
-		float check = 1.0f;
-	private:
-		PipelineStateContainer& GetPipelineState(PipelineStateType state);
 	};
 }

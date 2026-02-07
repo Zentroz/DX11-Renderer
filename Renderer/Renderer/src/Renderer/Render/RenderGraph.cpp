@@ -1,4 +1,4 @@
-#include"Renderer/RenderGraph/RenderGraph.h"
+#include"Renderer/Render/RenderGraph.h"
 #include<cassert>
 
 namespace zRender {
@@ -7,14 +7,14 @@ namespace zRender {
 	}
 	void BindRenderPassResource(IRenderContext* ctx, const std::vector<RenderPassResource>& resources, bool isOutput) {
 		std::vector<Handle> rtvs;
-		Handle dsv = InvalidHandle;
+		Handle dsv{};
 
 		for (auto r : resources) {
 			if (isOutput) {
 				// Binding Types
 				if (r.usage == RenderPassResource::RTV) rtvs.push_back(r.handle);
 				else if (r.usage == RenderPassResource::DSV) {
-					assert(dsv == InvalidHandle);
+					assert(dsv.isNull());
 					dsv = r.handle;
 				}
 			}

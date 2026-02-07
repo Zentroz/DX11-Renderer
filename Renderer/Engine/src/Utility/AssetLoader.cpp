@@ -9,6 +9,11 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/GltfMaterial.h>
+
+// Model
+#include<filesystem>
+#include<Utility/TexturePacker.h>
 
 bool MeshLoader::Load(zRender::MeshCPU& mesh, const std::string& path) {
 	return true;
@@ -19,7 +24,7 @@ void TextureLoader::FlipImage(bool flip) {
 }
 bool TextureLoader::Load(zRender::TextureCPU& texture, const std::string& path) {
 	texture.pixels = stbi_load(path.c_str(), &texture.width, &texture.height, &texture.channels, 4);
-	return true;
+	return texture.pixels != nullptr;
 }
 
 bool ShaderLoader::Load(zRender::ShaderCPU& shader, const std::string& path) {
@@ -48,8 +53,119 @@ bool ShaderLoader::Load(zRender::ShaderCPU& shader, const std::string& path) {
 }
 
 using namespace zRender;
+namespace fs = std::filesystem;
 
-ModelAsset::~ModelAsset() {}
+ModelAsset::~ModelAsset() {
+	Dispose();
+}
+
+void ModelAsset::Dispose() {
+	if (mesh) {
+		delete mesh;
+		mesh = nullptr;
+	}
+
+	for (auto& pair : textures) {
+		delete pair.second;
+	}
+
+	textures.clear();
+}
+
+bool LoadTextureFromAiScene(TextureCPU** pTexture, aiTextureType type, uint32_t index, const aiMaterial* material, const aiScene* scene, fs::path meshPath) {
+	uint32_t count = material->GetTextureCount(type);
+	if (index < count) {
+		aiString pathStr;
+		aiReturn ret = material->GetTexture(type, index, &pathStr);
+
+		const char* path = pathStr.C_Str();
+
+		if (ret == aiReturn_SUCCESS) {
+			if (path[0] == '*') {
+				(*pTexture) = new TextureCPU();
+
+				int index = atoi(path + 1);
+				aiTexture* texture = scene->mTextures[index];
+
+				if (texture->mHeight != 0) {
+					// Uncompressed embedded texture
+					(*pTexture)->width = texture->mWidth;
+					(*pTexture)->height = texture->mHeight;
+					(*pTexture)->channels = 4;
+
+					int pixelCount = texture->mWidth * texture->mHeight;
+					(*pTexture)->pixels = new unsigned char[pixelCount * 4];
+
+					aiTexel* src = texture->pcData;
+					(*pTexture)->channels = 4;
+
+					for (size_t i = 0; i < pixelCount; i++) {
+						(*pTexture)->pixels[i * 4 + 0] = src[i].r;
+						(*pTexture)->pixels[i * 4 + 1] = src[i].g;
+						(*pTexture)->pixels[i * 4 + 2] = src[i].b;
+						(*pTexture)->pixels[i * 4 + 3] = src[i].a;
+					}
+				}
+				else {
+					printf("Embedded compressed textures not supported!");
+					return false;
+					/*
+					// Compressed embedded texture
+					int width, height, channels;
+
+					unsigned char* decodedPixels = stbi_load_from_memory(
+						reinterpret_cast<unsigned char*>(texture->pcData),
+						texture->mWidth,
+						&width,
+						&height,
+						&channels,
+						4
+					);
+
+					if (!decodedPixels)
+					{
+						printf("Failed to decode embedded texture\n");
+						return false;
+					}
+
+					TextureCPU* tex = new TextureCPU();
+					tex->width = width;
+					tex->height = height;
+					tex->channels = channels;
+					tex->pixels = decodedPixels;
+
+					(*pTexture) = tex;
+				*/
+				}
+			}
+			else {
+				// External Texture
+				std::string texturePath = "";
+
+				if (!fs::exists(fs::path(path)))
+					texturePath = (meshPath.parent_path() / path).string();
+				else texturePath = path;
+
+				if (!fs::exists(texturePath)) {
+					printf("Failed to load texture - path is wrong: %s \n", path);
+					return false;
+				}
+
+				(*pTexture) = new TextureCPU();
+				TextureLoader loader;
+				if (!loader.Load(**pTexture, texturePath)) {
+					delete (*pTexture);
+					(*pTexture) = nullptr;
+					return false;
+				}
+				(*pTexture)->name = fs::path(texturePath).stem().string();
+			}
+		}
+	}
+	else return false;
+
+	return true;
+}
 
 bool ModelLoader::Load(ModelAsset& model, const std::string& filepath) {
 	Assimp::Importer importer;
@@ -155,51 +271,122 @@ bool ModelLoader::Load(ModelAsset& model, const std::string& filepath) {
 			subMesh.indexCount = totalIndexCount - subMesh.indexOffset;
 
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			bool createMaterial = true;
+			bool isMaterialLoaded = true;
 
 			for (auto& mat : model.materials) {
 				if (mat.name == material->GetName().C_Str()) {
-					createMaterial = false;
+					isMaterialLoaded = false;
 					mat.subMeshIndices.push_back(rawMesh->subMeshes.size());
 					break;
 				}
 			}
 
-			if (createMaterial) {
-				aiString* texturePath = nullptr;
-				aiTexture* diffuseTexture = nullptr;
-				/*
-				aiReturn ret = material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texturePath);
-
-				if (texturePath->data[0] == '*') {
-					// Embedded Texture
-				}
-				else {
-					// External texture
-				}
-				*/
-
-				aiTexture normalTexture;
-				aiTexture metallicTexture;
-				aiTexture rougnessTexture;
-				aiColor3D baseColor(0.0f, 0.0f, 0.0f);
-				float rougness = 0;
-				float metallic = 0;
-				material->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor);
-				material->Get(AI_MATKEY_ROUGHNESS_FACTOR, rougness);
-				material->Get(AI_MATKEY_METALLIC_FACTOR, metallic);
-
+			if (isMaterialLoaded) {
 				ModelAsset::Material mat;
 				mat.name = material->GetName().C_Str();
 				mat.subMeshIndices.push_back(rawMesh->subMeshes.size());
-				mat.baseColor = vec4(baseColor.r, baseColor.g, baseColor.b, 1);
-				mat.roughness = rougness;
-				mat.metallic = metallic;
+				
+
+				aiColor4D baseColor(1.0f, 1.0f, 1.0f, 1.0f);
+				aiString aplhaMode;
+				float roughness = 0;
+				float metallic = 0;
+				float opacity = 1;
+				float aplhaCutoff = 0.5f;
+
+				material->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor);
+				material->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness);
+				material->Get(AI_MATKEY_METALLIC_FACTOR, metallic);
+				material->Get(AI_MATKEY_OPACITY, opacity);
+				material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, aplhaCutoff);
+
+				mat.renderMode = ModelAsset::Material::RenderMode::Opaque;
+
+				if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, aplhaMode) == aiReturn_SUCCESS) {
+					if (aplhaMode == aiString("MASK")) {
+						mat.renderMode = ModelAsset::Material::RenderMode::AplhaTest;
+					}
+					else if (aplhaMode == aiString("BLEND")) {
+						mat.renderMode = ModelAsset::Material::RenderMode::AplhaTest;
+					}
+				}
+
+				mat.baseColor = vec4(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+				mat.aplhaCutoff = aplhaCutoff;
+
+				auto containsTextureWithName = [&](std::string name) {
+					if (model.textures.contains(name)) return true;
+					return false;
+				};
+				auto addTextureIfDoesntExistOtherwiseDelete = [&](TextureCPU* texture) {
+					std::string name = texture->name;
+					if (!model.textures.contains(texture->name)) model.textures[texture->name] = texture;
+					else {
+						delete texture;
+					}
+					return name;
+				};
+
+				TextureCPU* albedo = nullptr;
+				if (LoadTextureFromAiScene(&albedo, aiTextureType_DIFFUSE, 0, material, scene, filepath)) {
+					mat.albedoTextureName = addTextureIfDoesntExistOtherwiseDelete(albedo);
+					albedo->filterMode = TextureCPU::Linear;
+				}
+				TextureCPU* normal = nullptr;
+				if (LoadTextureFromAiScene(&normal, aiTextureType_NORMALS, 0, material, scene, filepath)) {
+					normal->filterMode = TextureCPU::FilterMode::Linear;
+					mat.normalTextureName = addTextureIfDoesntExistOtherwiseDelete(normal);
+				}
+
+				TextureCPU* packedORM = nullptr;
+				LoadTextureFromAiScene(&packedORM, aiTextureType_UNKNOWN, 0, material, scene, filepath);
+
+				if (packedORM) {
+					// // Combined Textures RM Format
+					mat.roughnessFactor = 1;
+					mat.metallicFactor = 1;
+
+					mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(packedORM);
+				}
+				else {
+					TextureCPU* rough = nullptr;
+					TextureCPU* metal = nullptr;
+
+					LoadTextureFromAiScene(&metal, aiTextureType_METALNESS, 0, material, scene, filepath);
+					LoadTextureFromAiScene(&rough, aiTextureType_DIFFUSE_ROUGHNESS, 0, material, scene, filepath);
+
+					if (rough && metal) {
+						mat.roughnessFactor = 1;
+						mat.metallicFactor = 1;
+
+						if (rough->name == metal->name) {
+							mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(rough);
+						}
+						else {
+							mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(PackTextureRM(rough, metal));
+						}
+					}
+					else if (rough || metal) {
+						TextureCPU* orm = rough ? rough : metal;
+						mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(packedORM);
+
+						TextureCPU* textureToDelete = (!rough) ? rough : metal;
+						delete textureToDelete;
+					}
+					else {
+						mat.roughnessFactor = roughness;
+						mat.metallicFactor = metallic;
+					}
+				}
+
+				if (!mat.rmTextureName.empty()) {
+					model.textures[mat.rmTextureName]->filterMode = TextureCPU::FilterMode::Point;
+				}
 
 				model.materials.push_back(mat);
 			}
 
-			subMesh.name = mesh->mName.C_Str();
+			subMesh.name = node->mName.C_Str();
 
 			rawMesh->subMeshes.push_back(subMesh);
 		}

@@ -6,10 +6,10 @@
 namespace zRender {
     class IRenderContext {
     public:
-        IRenderContext() {}
+        virtual ~IRenderContext() {}
 
         virtual void ClearStatesAndResources() = 0;
-        virtual void UpdateBuffer(uint32_t handle, unsigned int byteWidth, void* data) = 0;
+        virtual void UpdateBuffer(BufferHandle handle, unsigned int byteWidth, void* data) = 0;
         virtual void SetViewport(int width, int height) = 0;
 
         virtual void BeginFrame() = 0;

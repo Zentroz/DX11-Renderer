@@ -28,11 +28,14 @@ namespace zRender {
 			float roughness;
 			float metallic;
 
+			enum RenderMode { Opaque, AplhaTest, Transparent } renderMode;
+
 			ShaderHandle shaderHandle;
 			std::vector<TextureHandle> textureHandles;
+
+			float aplhaCutoff;
 		} materialData;
 
-		// Starts from slot 3
 		std::vector<BufferHandle> constantBuffers;
 		std::vector<void*> constantBuffersData;
 

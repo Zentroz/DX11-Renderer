@@ -17,7 +17,6 @@ RenderPassDesc ShadowPass::GetDesc() const {
 	};
 }
 void ShadowPass::Execute(const RenderPassContext& ctx) {
-	/*
 	FrameData fData;
 	ObjectData oData;
 
@@ -33,13 +32,12 @@ void ShadowPass::Execute(const RenderPassContext& ctx) {
 	ctx.ctx->ClearDepthStencil(depthSV);
 	ctx.ctx->BindPipeline(pipeline);
 
-	for (auto& item : ctx.renderItems) {
+	for (auto& item : ctx.renderItemsOpaque) {
 		oData.modelMatrix = item.modelMatrix;
 
 		ctx.ctx->UpdateBuffer(objectBufferHandle, sizeof(ObjectData), &oData);
 		ctx.ctx->BindBufferVS(2, objectBufferHandle);
 
-		ctx.ctx->DrawGeometryIndexed(item.meshHandle);
+		//ctx.ctx->DrawGeometryIndexed(item.meshHandle);
 	}
-	*/
 }

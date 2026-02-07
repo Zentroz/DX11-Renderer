@@ -1,30 +1,99 @@
 struct Light
 {
-    float3 color;
-    float intensity;
-    float3 vec;
-    float range;
-};
+	int4 type; // x = { 0 = Directional / 1 = Point / 2 = Spot }
 
-cbuffer AdditionalLightData : register(b3)
-{
-    int lightCount;
-    float3 adPadding;
+	float4 position;
+	float4 direction;
+	float4 lightColor;
     
-    Light lights[32];
+	// x = Intensity, y = Range, z = InnerCone, w = OuterCone
+	float4 lightProp;
 };
 
-Light GetAdditionalLight(int index)
+cbuffer LightBuffer : register(b3)
 {
-    return lights[index];
-}
-
-int GetAdditionalLightCount()
-{
-    return lightCount;
+	Light lights[8];
+	int4 lightCount;
 }
 
 #define PI 3.14159265359
+
+float3 GetLightDirection(uint index, float3 position)
+{
+	Light light = lights[index];
+    
+	if (light.type.x == 0)
+	{
+        // Directional
+		return -light.direction;
+	}
+	else if (light.type.x == 1)
+	{
+        // Point
+		return normalize(light.position.xyz - position);
+	}
+	else
+	{
+        // Spot
+		return normalize(light.position.xyz - position);
+	}
+}
+float3 GetLightDirection(Light light, float3 position)
+{
+	if (light.type.x == 0)
+	{
+        // Directional
+		return light.direction;
+	}
+	else if (light.type.x == 1)
+	{
+        // Point
+		return normalize(light.position.xyz - position);
+	}
+	else
+	{
+        // Spot
+		return normalize(light.position.xyz - position);
+	}
+}
+
+float CalculateLightIntensity(Light light, float3 position)
+{
+	float intensity = 0;
+    
+	float3 lightDir = position - light.position.xyz;
+	float dist = length(lightDir);
+    
+	if (light.type.x == 0)
+	{
+        // Directional
+		return light.lightProp.x;
+	}
+	else if (light.type.x == 1)
+	{
+        // Point
+		float3 lightDir = position - light.position.xyz;
+		float dist = length(lightDir);
+    
+		float range = light.lightProp.y;
+		float distSq = dist * dist;
+
+		float attenuation = 1.0 / max(distSq, 0.001);
+        
+		float fade = saturate(1.0 - dist / range);
+		fade *= fade;
+
+		intensity = light.lightProp.x * attenuation * fade;
+	}
+	else
+	{
+        // Spot
+		float angle = dot(light.direction.xyz, normalize(lightDir));
+		intensity = clamp((angle - light.lightProp.w) / (light.lightProp.z - light.lightProp.w), 0.0f, 1.0f);
+	}
+        
+	return intensity;
+}
 
 float3 CalculatePhongLighting(float3 normal, float3 fragPos, float3 camPos, float3 lightDir, float3 lightColor, float3 specularColor, float shininess)
 {
@@ -88,10 +157,11 @@ float3 CookTorranceBRDF(
     float3 N,
     float3 V,
     float3 L,
+    float lightIntensity,
     float3 lightColor
 )
 {
-    float3 radiance = lightColor * 1;
+	float3 radiance = lightColor * lightIntensity;
     
     float3 H = normalize(V + L);
 
@@ -114,12 +184,5 @@ float3 CookTorranceBRDF(
     
     float3 Lo = (kD * albedo / PI + specular) * radiance * NdotL;
 
-    float3 ambient = 0.3 * albedo;
-    float3 color = ambient + Lo;
-    
-    //float3 p = 1.0 / 2.2;
-    //color = color / (color + 1.0);
-    //color = pow(color, p);
-
-    return color;
+    return Lo;
 }

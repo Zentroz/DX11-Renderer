@@ -1,18 +1,25 @@
 #pragma once
 
+#pragma once
+
 #include"Renderer/Render/RenderPassInterface.h"
 
 namespace zRender {
-	class PresentPass : public IRenderPass {
+	struct GradiantPassInput {
+		Handle outputTextureHandle;
+		PipelineStateContainer pipeline;
+	};
+
+	class GradiantPass : public IRenderPass {
 	public:
-		PresentPass(Handle presentTextureHandle, Handle screenTextureHandle, PipelineStateContainer pipeline);
+		GradiantPass(const GradiantPassInput& input);
 
 		RenderPassDesc GetDesc() const override;
 
 		void Execute(const RenderPassContext& ctx) override;
+
 	private:
-		Handle presentTextureHandle;
-		Handle screenTextureHandle;
+		Handle outputTextureHandle;
 		PipelineStateContainer pipeline;
 	};
 }

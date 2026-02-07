@@ -8,5 +8,8 @@ public:
 	ObjectPanel() = default;
 
 	void Draw(std::vector<Material*> drawMaterials);
+
+	int GetSelectedRenderOutput() { return selectedOutput; };
 private:
+	int selectedOutput = 0;
 };

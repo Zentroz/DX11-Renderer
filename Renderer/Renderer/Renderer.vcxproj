@@ -80,11 +80,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Renderer\Core\ErrorLogger.h" />
     <ClInclude Include="src\Renderer\Core\Handles.h" />
     <ClInclude Include="src\Renderer\Core\Helpers.h" />
+    <ClInclude Include="src\Renderer\Core\Lights.h" />
     <ClInclude Include="src\Renderer\Core\Math.h" />
     <ClInclude Include="src\Renderer\Core\ResourceGPU.h" />
     <ClInclude Include="src\Renderer\Core\ResourcesCPU.h" />
+    <ClInclude Include="src\Renderer\Core\uuid.h" />
     <ClInclude Include="src\Renderer\D3D11\D3D11Resources.h" />
     <ClInclude Include="src\Renderer\D3D11\GraphicsDevice.h" />
     <ClInclude Include="src\Renderer\D3D11\RenderContext.h" />
@@ -98,25 +101,17 @@
     <ClInclude Include="src\Renderer\Render\RenderPassInterface.h" />
     <ClInclude Include="src\Renderer\Render\RenderTargetInterface.h" />
     <ClInclude Include="src\Renderer\Render\ResourceProviderInterface.h" />
-    <ClInclude Include="src\Renderer\RenderGraph\RenderGraph.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\GBufferDebugPass.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\GBufferPass.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\LightingPass.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\PresentPass.h" />
-    <ClInclude Include="src\Renderer\RenderPasses\ShadowPass.h" />
+    <ClInclude Include="src\Renderer\Render\RenderGraph.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Renderer\Core\Math.cpp" />
+    <ClCompile Include="src\Renderer\Core\uuid.cpp" />
     <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp" />
     <ClCompile Include="src\Renderer\D3D11\RenderContext.cpp" />
     <ClCompile Include="src\Renderer\D3D11\ResourceProvider.cpp" />
     <ClCompile Include="src\Renderer\Render\Camera.cpp" />
-    <ClCompile Include="src\Renderer\RenderGraph\RenderGraph.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\GBufferDebugPass.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\GBufferPass.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\LightingPass.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\PresentPass.cpp" />
-    <ClCompile Include="src\Renderer\RenderPasses\ShadowPass.cpp" />
+    <ClCompile Include="src\Renderer\Render\RenderGraph.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

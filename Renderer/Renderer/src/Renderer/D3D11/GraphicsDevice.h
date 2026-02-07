@@ -15,7 +15,9 @@ namespace zRender {
     class D3D11Device : public GraphicsDevice {
     public:
         void Initialize(void* windowHandle) override;
-        void Shutdown() override;
+        void Release() override;
+
+        void Resize(int newWidth, int newHeight, bool isFullscreen);
 
         ID3D11RenderTargetView* CreateRenderTarget();
         ID3D11Texture2D* GetBackBufferTexture();

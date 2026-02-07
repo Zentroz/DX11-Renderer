@@ -4,10 +4,19 @@
 
 namespace zRender {
 	__declspec(align(16)) struct Light {
-		vec3 color;
-		float intensity;
-		vec3 vector;
-		float range;
+		int4 type; // x = { 0 = Directional / 1 = Point / 2 = Spot }
+
+		vec4 position;
+		vec4 direction;
+		vec4 lightColor;
+		/// <summary>
+		/// x = Intensity, y = Range, z = InnerCone, w = OuterCone
+		/// </summary>
+		vec4 lightProp;
+	};
+	__declspec(align(16)) struct LightData {
+		Light lights[8];
+		int4 lightCount;
 	};
 
 	__declspec(align(16)) struct StaticData {
@@ -18,6 +27,7 @@ namespace zRender {
 	__declspec(align(16)) struct FrameData {
 		DirectX::XMMATRIX vpMatrix;
 		vec4 cameraPosition;
+		vec4 time; // x = delta, y = total
 	};
 
 	__declspec(align(16)) struct ObjectData {
@@ -27,7 +37,8 @@ namespace zRender {
 		vec4 diffuseColor;
 		float roughness;
 		float metallic;
-		vec2 padding;
+		float aplhaCutoff;
+		float padding;
 	};
 	__declspec(align(16)) struct AdditionalLightData {
 		int lightCount;

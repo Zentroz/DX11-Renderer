@@ -12,7 +12,7 @@ struct EngineMaterial {
 	std::vector<TextureHandle> textures;
 
 	EngineMaterial() 
-		: shaderData(nullptr), shaderDataByteWidth(0), shaderHandle(InvalidHandle), shaderBufferHandle(InvalidHandle), textures({}) 
+		: shaderData(nullptr), shaderDataByteWidth(0), shaderHandle({}), shaderBufferHandle({}), textures({})
 	{}
 };
 

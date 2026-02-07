@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/Renderer/Engine/Assets/Mesh
+/Renderer/Engine/Assets/Skybox
+/Renderer/Engine/Assets/others

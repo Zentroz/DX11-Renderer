@@ -36,9 +36,21 @@ HINSTANCE Window::WindowClass::GetInstance() noexcept
     return wndClass.hInstance;
 }
 
-void Window::Init() {
-    int clientWidth = 1280;
-    int clintHeight = 720;
+void Window::GetClientSize(int& width, int& height) const {
+    RECT windowRect;
+
+    if (!GetClientRect(m_hWnd, &windowRect))
+    {
+        assert("Couldn't get window rect.");
+    }
+
+    width = windowRect.right - windowRect.left;
+    height = windowRect.bottom - windowRect.top;
+}
+
+void Window::Init(const WindowInitData& initData) {
+    int clientWidth = initData.width;
+    int clintHeight = initData.height;
 
     RECT wr;
     wr.left = 100;
@@ -98,6 +110,33 @@ void Window::CleanUp() {
     m_hWnd = NULL;
 }
 
+bool IsFullscreen(HWND hwnd) {
+    RECT windowRect;
+    // Get the coordinates of the window's bounding rectangle
+    if (!GetWindowRect(hwnd, &windowRect)) {
+        return false; // Error getting window rect
+    }
+
+    // Get the dimensions of the primary screen
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    // Calculate window width and height from its rect
+    int windowWidth = windowRect.right - windowRect.left;
+    int windowHeight = windowRect.bottom - windowRect.top;
+
+    // Check if window dimensions match screen dimensions
+    // Note: A small tolerance might be needed in some complex scenarios, 
+    // but typically they will match exactly if fullscreened by standard methods.
+    if (windowWidth == screenWidth && windowHeight == screenHeight) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
 LRESULT CALLBACK Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
     if (msg == WM_NCCREATE)
@@ -119,6 +158,7 @@ LRESULT CALLBACK Window::HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 }
 
 //extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#include<Engine.h>
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -128,14 +168,19 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 
     switch (msg)
     {
-    case WM_KEYDOWN:
-    {
-    }
     break;
-    case WM_KEYUP:
-    {
-    }
-    break;
+    case WM_SIZE:
+        RECT windowRect;
+
+        if (!GetClientRect(hWnd, &windowRect))
+        {
+            assert("Couldn't get window rect.");
+        }
+
+        if (engine == nullptr) break;
+
+        static_cast<Engine*>(engine)->QueueResize(windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, IsFullscreen(m_hWnd));
+        break;
     case WM_CLOSE:
         Close();
         PostQuitMessage(0);
