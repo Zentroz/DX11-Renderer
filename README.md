@@ -4,6 +4,8 @@ A small real-time renderer built using DirectX 11 to explore and implement moder
 <img width="1918" height="940" alt="renderer-1" src="https://github.com/user-attachments/assets/77cadefa-507e-49d9-9fb6-dbf9bb983299" />
 
 ## Features
+### In-Progress
+* Deforming mesh vertices with tools
 ### Core
 * DirectX 11 rendering pipeline setup
 * Camera movement (WASD + mouse)
