@@ -5,8 +5,6 @@ A small real-time renderer built using DirectX 11 to explore and implement moder
 
 
 ## Features
-### In-Progress
-* Deforming mesh vertices with tools
 ### Core
 * DirectX 11 rendering pipeline setup
 * Camera movement (WASD + mouse)
