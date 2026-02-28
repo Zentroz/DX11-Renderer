@@ -27,6 +27,9 @@ namespace zRender {
 		CreateRasterizer(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Wireframe);
 		CreateDepthStencilState(DepthWriteMask_All, DepthFunc_LessEqual);
 		CreateDepthStencilState(DepthWriteMask_Zero, DepthFunc_LessEqual);
+		CreateDepthStencilState(DepthWriteMask_All, DepthFunc_Less);
+		CreateDepthStencilState(DepthWriteMask_Zero, DepthFunc_Less);
+		CreateDepthStencilState(DepthWriteMask_Zero, DepthFunc_Never);
 		screenTextureHandle = CreateTextureResource(device->GetBackBufferTexture(), TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget, TextureFilter::Linear);
 	}
 
@@ -45,8 +48,8 @@ namespace zRender {
 		m_TextureMap.erase(newId);
 	}
 
-	MeshHandle D3D11ResourceProvider::LoadMesh(const MeshCPU& rawMesh) {
-		std::shared_ptr<D3D11Mesh> mesh = std::make_shared<D3D11Mesh>();
+	MeshHandle D3D11ResourceProvider::LoadMesh(const Mesh& rawMesh) {
+		std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(rawMesh);
 
 		D3D11_BUFFER_DESC vDesc;
 		ZeroMemory(&vDesc, sizeof(vDesc));
@@ -77,9 +80,9 @@ namespace zRender {
 		mesh->vertexStride = sizeof(Vertex);
 
 		for (const auto& sub : rawMesh.subMeshes) {
-			mesh->subMeshes.push_back({});
+			mesh->subMeshesGPU.push_back({});
 
-			SubMeshGPU& subMesh = mesh->subMeshes.back();
+			SubMeshGPU& subMesh = mesh->subMeshesGPU.back();
 
 			subMesh.vertexCount = sub.vertexCount;
 			subMesh.vertexOffset = sub.vertexOffset;
@@ -131,8 +134,8 @@ namespace zRender {
 	};
 
 
-	ShaderHandle D3D11ResourceProvider::LoadShader(const ShaderCPU& rawShader) {
-		std::shared_ptr<D3D11Shader> shader = std::make_shared<D3D11Shader>();
+	ShaderHandle D3D11ResourceProvider::LoadShader(const Shader& rawShader) {
+		std::shared_ptr<Shader> shader = std::make_shared<Shader>(rawShader);
 
 		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -180,8 +183,8 @@ namespace zRender {
 		hr = device->GetDevice()->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &shader->vertexShader);
 		hr = device->GetDevice()->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &shader->pixelShader);
 
-		if (rawShader.inputLayout != InputLayout_None) 
-			hr = device->GetDevice()->CreateInputLayout(inputLayouts[rawShader.inputLayout].data(), inputLayouts[rawShader.inputLayout].size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &shader->inputLayout);
+		if (rawShader.inputLayoutFlag != InputLayout_None) 
+			hr = device->GetDevice()->CreateInputLayout(inputLayouts[rawShader.inputLayoutFlag].data(), inputLayouts[rawShader.inputLayoutFlag].size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &shader->inputLayout);
 
 		if (vsBlob) vsBlob->Release();
 		if (psBlob) psBlob->Release();
@@ -191,7 +194,7 @@ namespace zRender {
 		return handle;
 	}
 
-	TextureHandle D3D11ResourceProvider::LoadTexture(const TextureCPU& rawTexture) {
+	TextureHandle D3D11ResourceProvider::LoadTexture(const Texture& rawTexture) {
 		ID3D11Texture2D* texture = nullptr;
 
 		D3D11_TEXTURE2D_DESC desc;
@@ -221,16 +224,16 @@ namespace zRender {
 	}
 
 	// Order of Textures : 0 = +X, 1 = -X, 2 = +Y, 3 = -Y, 4 = +Z, 5 = -Z
-	TextureHandle D3D11ResourceProvider::LoadTextureCubeMap(const TextureCPU rawTextures[6]) {
-		std::shared_ptr<D3D11Texture> texture = std::make_shared<D3D11Texture>();
+	TextureHandle D3D11ResourceProvider::LoadTextureCubeMap(const Texture textures[6]) {
+		std::shared_ptr<Texture> texture = std::make_shared<Texture>();
 
 		D3D11_TEXTURE2D_DESC desc;
 		ZeroMemory(&desc, sizeof(desc));
-		desc.Width = rawTextures[0].width;
-		desc.Height = rawTextures[0].height;
+		desc.Width = textures[0].width;
+		desc.Height = textures[0].height;
 		desc.MipLevels = 1;
 		desc.ArraySize = 6;
-		if (rawTextures[0].channels == 4 || rawTextures[0].channels == 3) {
+		if (textures[0].channels == 4 || textures[0].channels == 3) {
 			desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 		desc.SampleDesc.Count = 1;
@@ -242,8 +245,8 @@ namespace zRender {
 
 		for (int i = 0; i < 6; ++i)
 		{
-			subresources[i].pSysMem = rawTextures[i].pixels;
-			subresources[i].SysMemPitch = static_cast<UINT>(rawTextures[i].width * 4);
+			subresources[i].pSysMem = textures[i].pixels;
+			subresources[i].SysMemPitch = static_cast<UINT>(textures[i].width * 4);
 			subresources[i].SysMemSlicePitch = 0;
 		}
 
@@ -338,6 +341,12 @@ namespace zRender {
 			return D3D11_COMPARISON_NEVER;
 		case DepthFunc_LessEqual:
 			return D3D11_COMPARISON_LESS_EQUAL;
+		case DepthFunc_Less:
+			return D3D11_COMPARISON_LESS;
+		case DepthFunc_Greater:
+			return D3D11_COMPARISON_GREATER;
+		case DepthFunc_GreaterEqual:
+			return D3D11_COMPARISON_GREATER_EQUAL;
 		}
 
 		return D3D11_COMPARISON_LESS_EQUAL;
@@ -395,6 +404,8 @@ namespace zRender {
 			return DXGI_FORMAT_R16_FLOAT;
 		case zRender::TextureFormat::TextureFormat_R32F:
 			return DXGI_FORMAT_R32_FLOAT;
+		case zRender::TextureFormat::TextureFormat_R32Uint:
+			return DXGI_FORMAT_R32_UINT;
 		case zRender::TextureFormat::TextureFormat_RGBA8_sRGB:
 			return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		case zRender::TextureFormat::TextureFormat_RGBA8_UNorm:
@@ -501,7 +512,7 @@ namespace zRender {
 	}
 
 	TextureHandle D3D11ResourceProvider::CreateTextureResource(ID3D11Texture2D* texture, TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter) {
-		std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>();
+		std::shared_ptr<Texture> tex = std::make_shared<Texture>();
 		tex->texture = texture;
 
 		D3D11_SAMPLER_DESC sampDesc;
@@ -564,8 +575,7 @@ namespace zRender {
 
 	void D3D11ResourceProvider::DestroyTexture(const uuid& id) {
 		if (!m_TextureMap.contains(id)) return;
-		D3D11Texture* tex = m_TextureMap[id].get();
-		tex->Release();
+		m_TextureMap[id]->Release();
 		
 		m_TextureMap.erase(id);
 	}

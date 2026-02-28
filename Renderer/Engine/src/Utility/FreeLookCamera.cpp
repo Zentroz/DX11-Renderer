@@ -37,7 +37,7 @@ void FreelookCamera::Update() {
 		m_Camera.forward.x = cos(pitchRad) * sin(yawRad);
 		m_Camera.forward.y = sin(pitchRad);
 		m_Camera.forward.z = cos(pitchRad) * cos(yawRad);
-		zRender::vec3::normalize(m_Camera.forward);
+		zRender::normalize(m_Camera.forward);
 	}
 
 	XMVECTOR fw = XMVectorSet(m_Camera.forward.x, m_Camera.forward.y, m_Camera.forward.z, 0);
@@ -46,7 +46,7 @@ void FreelookCamera::Update() {
 	XMVECTOR rg = -XMVector3Cross(fw, wUp);
 
 	zRender::vec3 right = { XMVectorGetX(rg), XMVectorGetY(rg), XMVectorGetZ(rg) };
-	zRender::vec3::normalize(right);
+	zRender::normalize(right);
 
 	if (ImGui::IsKeyDown(ImGuiKey_W)) {
 		m_Camera.position = m_Camera.position + m_Camera.forward * moveSpeed * io.DeltaTime;

@@ -1,7 +1,5 @@
 #include"Engine/AssetManager.h"
 
-#include<Renderer/Core/ResourcesCPU.h>
-
 using namespace zRender;
 
 Handle AssetManager::AddMaterial(Material& mat) {

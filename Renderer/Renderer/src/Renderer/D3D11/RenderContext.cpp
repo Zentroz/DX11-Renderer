@@ -10,8 +10,6 @@ namespace zRender {
 
 	D3D11RenderContext::D3D11RenderContext(ID3D11DeviceContext* context, IDXGISwapChain* swapChain, D3D11ResourceProvider* resourceProvider) :
 		context(context), swapChain(swapChain), resourceProvider(resourceProvider) {
-
-		//depthStencil = resourceProvider->CreateDepthStencilView();
 	}
 
 	void D3D11RenderContext::SetScreenSize(int width, int height) {
@@ -20,12 +18,12 @@ namespace zRender {
 	}
 
 	void D3D11RenderContext::ClearRenderTarget(TextureHandle handle, float clearColor[4]) {
-		D3D11Texture* tex = resourceProvider->GetResource<D3D11Texture>(handle);
+		Texture* tex = resourceProvider->GetResource<Texture>(handle);
 		context->ClearRenderTargetView(tex->renderTargetView, clearColor);
 	}
 
 	void D3D11RenderContext::ClearDepthStencil(TextureHandle handle) {
-		D3D11Texture* tex = resourceProvider->GetResource<D3D11Texture>(handle);
+		Texture* tex = resourceProvider->GetResource<Texture>(handle);
 		if (tex->depthStencilView)
 			context->ClearDepthStencilView(tex->depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
@@ -46,7 +44,7 @@ namespace zRender {
 				views.clear();
 				continue;
 			}
-			D3D11Texture* texture = resourceProvider->GetResource<D3D11Texture>(renderViews[i]);
+			Texture* texture = resourceProvider->GetResource<Texture>(renderViews[i]);
 			ID3D11RenderTargetView* rtv = texture->renderTargetView;
 			views.push_back(rtv);
 		}
@@ -55,7 +53,7 @@ namespace zRender {
 		ID3D11DepthStencilView* dsv = nullptr;
 
 		if (!depthView.isNull()) {
-			auto tex = resourceProvider->GetResource<D3D11Texture>(depthView);
+			auto tex = resourceProvider->GetResource<Texture>(depthView);
 			dsv = tex->depthStencilView;
 		}
 
@@ -102,7 +100,7 @@ namespace zRender {
 	void D3D11RenderContext::DrawGeometryIndexed(MeshHandle handle, uint32_t subMeshIndex) {
 		if (handle.isNull()) return;
 
-		D3D11Mesh* mesh = resourceProvider->GetResource<D3D11Mesh>(handle);
+		Mesh* mesh = resourceProvider->GetResource<Mesh>(handle);
 
 		if (!mesh) {
 			printf("No Mesh to bind of, Handle: %d \n", handle);
@@ -143,10 +141,12 @@ namespace zRender {
 	}
 
 	void D3D11RenderContext::BindBufferVS(uint32_t slot, BufferHandle handle) {
+		assert(!handle.isNull());
+
 		if (handle.isNull()) return;
 
 		ID3D11Buffer* buffer = resourceProvider->GetBuffer(handle);
-		if (!buffer) printf("No Buffer to bind to VS of, Handle: %d \n", handle);
+		if (!buffer) printf("No Buffer to bind to VS of, Handle: %s \n", handle.get().c_str());
 		context->VSSetConstantBuffers(slot, 1, &buffer);
 	}
 
@@ -154,14 +154,15 @@ namespace zRender {
 		if (handle.isNull()) return;
 
 		ID3D11Buffer* buffer = resourceProvider->GetBuffer(handle);
-		if (!buffer) printf("No Buffer to bind to PS of, Handle: %d \n", handle);
+		if (!buffer) printf("No Buffer to bind to PS of, Handle: %s \n", handle.get().c_str());
 		context->PSSetConstantBuffers(slot, 1, &buffer);
 	}
 
 	void D3D11RenderContext::BindTextureVS(uint32_t slot, TextureHandle handle) {
-		D3D11Texture* tex = resourceProvider->GetResource<D3D11Texture>(handle);
+		Texture* tex = resourceProvider->GetResource<Texture>(handle);
+
 		if (!tex) {
-			printf("No Texture to bind to VS of, Handle: %d \n", handle);
+			printf("No Texture to bind to VS of, Handle: %s \n", handle.get().c_str());
 			ID3D11ShaderResourceView* srv = nullptr;
 			ID3D11SamplerState* sampler = nullptr;
 			context->VSSetShaderResources(slot, 1, &srv);
@@ -175,7 +176,7 @@ namespace zRender {
 		context->VSSetSamplers(slot, 1, &sampler);
 	}
 	void D3D11RenderContext::BindTexturePS(uint32_t slot, TextureHandle handle) {
-		D3D11Texture* tex = resourceProvider->GetResource<D3D11Texture>(handle);
+		Texture* tex = resourceProvider->GetResource<Texture>(handle);
 		if (!tex) {
 			printf("No Texture to bind to PS of, Handle: %d \n", handle);
 			ID3D11ShaderResourceView* srv = nullptr;
@@ -192,7 +193,7 @@ namespace zRender {
 	}
 
 	void D3D11RenderContext::BindPipeline(const zRender::PipelineStateContainer& pipelineState) {
-		D3D11Shader* shader = resourceProvider->GetResource<D3D11Shader>(pipelineState.shaderHandle);
+		Shader* shader = resourceProvider->GetResource<Shader>(pipelineState.shaderHandle);
 		ID3D11RasterizerState* rasterizer = resourceProvider->GetRasterizerState(pipelineState.rasterizerHandle);
 		ID3D11DepthStencilState* depthStencil = resourceProvider->GetDepthStencilState(pipelineState.depthStencilHandle);
 		ID3D11BlendState* blendState = resourceProvider->GetBlendState(pipelineState.blendHandle);

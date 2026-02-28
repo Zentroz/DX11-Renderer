@@ -1,6 +1,6 @@
 struct Light
 {
-	int4 type; // x = { 0 = Directional / 1 = Point / 2 = Spot }
+	int4 type; // x = { 0 = Directional / 1 = Point / 2 = Spot }, y = CastShadow
 
 	float4 position;
 	float4 direction;
@@ -8,36 +8,13 @@ struct Light
     
 	// x = Intensity, y = Range, z = InnerCone, w = OuterCone
 	float4 lightProp;
+    
+	matrix lightVPMatrix;
+	matrix invLightVPMatrix;
 };
-
-cbuffer LightBuffer : register(b3)
-{
-	Light lights[8];
-	int4 lightCount;
-}
 
 #define PI 3.14159265359
 
-float3 GetLightDirection(uint index, float3 position)
-{
-	Light light = lights[index];
-    
-	if (light.type.x == 0)
-	{
-        // Directional
-		return -light.direction;
-	}
-	else if (light.type.x == 1)
-	{
-        // Point
-		return normalize(light.position.xyz - position);
-	}
-	else
-	{
-        // Spot
-		return normalize(light.position.xyz - position);
-	}
-}
 float3 GetLightDirection(Light light, float3 position)
 {
 	if (light.type.x == 0)
@@ -48,12 +25,12 @@ float3 GetLightDirection(Light light, float3 position)
 	else if (light.type.x == 1)
 	{
         // Point
-		return normalize(light.position.xyz - position);
+		return normalize(position - light.position.xyz);
 	}
 	else
 	{
         // Spot
-		return normalize(light.position.xyz - position);
+		return normalize(position - light.position.xyz);
 	}
 }
 

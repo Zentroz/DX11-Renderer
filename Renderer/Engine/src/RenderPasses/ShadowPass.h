@@ -1,14 +1,20 @@
 #pragma once
 
 #include"Renderer/Render/RenderPassInterface.h"
+#include"Renderer/Render/RenderConstantBuffers.h"
 
 class ShadowPass : public zRender::IRenderPass {
 public:
 	struct InitData {
 		Handle depthSV;
-		BufferHandle frameBufferHandle;
+		Handle debugRT;
+		BufferHandle lightBufferHandle;
 		BufferHandle objectBufferHandle;
 		zRender::PipelineStateContainer pipeline;
+	};
+
+	struct LightBuffer {
+		zRender::Light light[8];
 	};
 
 public:
@@ -20,7 +26,8 @@ public:
 
 private:
 	Handle depthSV;
-	BufferHandle frameBufferHandle;
+	Handle debugRT;
+	BufferHandle lightBufferHandle;
 	BufferHandle objectBufferHandle;
 	zRender::PipelineStateContainer pipeline;
 };

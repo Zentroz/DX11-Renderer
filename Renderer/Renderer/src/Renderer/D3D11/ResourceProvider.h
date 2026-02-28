@@ -8,10 +8,9 @@
 #include<unordered_map>
 
 #include"Renderer/Core/uuid.h"
-#include"Renderer/Core/ResourcesCPU.h"
 #include"Renderer/Core/Handles.h"
+#include"Renderer/Core/Resources.h"
 #include"Renderer/D3D11/GraphicsDevice.h"
-#include"Renderer/D3D11/D3D11Resources.h"
 #include"Renderer/Render/ResourceProviderInterface.h"
 #include"Renderer/Render/PipelineStateContainer.h"
 #include"Renderer/Render/RenderPassInterface.h"
@@ -31,10 +30,10 @@ namespace zRender {
 		void ReleaseScreenTexture();
 		void RecreateScreenTextureHandle();
 
-		MeshHandle LoadMesh(const MeshCPU& rawMesh);
-		ShaderHandle LoadShader(const ShaderCPU& rawShader);
-		TextureHandle LoadTexture(const TextureCPU& rawTexture);
-		TextureHandle LoadTextureCubeMap(const TextureCPU rawTexture[6]);
+		MeshHandle LoadMesh(const Mesh& rawMesh);
+		ShaderHandle LoadShader(const Shader& rawShader);
+		TextureHandle LoadTexture(const Texture& rawTexture);
+		TextureHandle LoadTextureCubeMap(const Texture rawTexture[6]);
 
 		TextureHandle CreateTexture(int width, int height, TextureUsageFlags usageFlags, TextureFilter filter, vec4 initialColor);
 		TextureHandle CreateTexture(int width, int height, zRender::TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter) override;
@@ -61,9 +60,9 @@ namespace zRender {
 	private:
 		D3D11Device* device = nullptr;
 
-		ResourceMap<D3D11Mesh> m_MeshMap;
-		ResourceMap<D3D11Shader> m_ShaderMap;
-		ResourceMap<D3D11Texture> m_TextureMap;
+		ResourceMap<Mesh> m_MeshMap;
+		ResourceMap<Shader> m_ShaderMap;
+		ResourceMap<Texture> m_TextureMap;
 		std::unordered_map<uuid, ID3D11RenderTargetView*> m_RenderTargetMap;
 		std::unordered_map<BufferHandle, ID3D11Buffer*> m_BufferMap;
 		std::unordered_map<DepthStateHandle, ID3D11DepthStencilState*> m_DepthStencilStateMap;
@@ -79,17 +78,17 @@ namespace zRender {
 		T* resource = nullptr;
 		if (h.isNull()) return resource;
 
-		if (typeid(T) == typeid(D3D11Mesh)) {
+		if (typeid(T) == typeid(Mesh)) {
 			if (!m_MeshMap.contains(h)) return resource;
-			resource = static_cast<T*>(static_cast<D3D11Resource*>(m_MeshMap[h].get()));
+			resource = static_cast<T*>(static_cast<Resource*>(m_MeshMap[h].get()));
 		}
-		else if (typeid(T) == typeid(D3D11Shader)) {
+		else if (typeid(T) == typeid(Shader)) {
 			if (!m_ShaderMap.contains(h)) return resource;
-			resource = static_cast<T*>(static_cast<D3D11Resource*>(m_ShaderMap[h].get()));
+			resource = static_cast<T*>(static_cast<Resource*>(m_ShaderMap[h].get()));
 		}
-		else if (typeid(T) == typeid(D3D11Texture)) {
+		else if (typeid(T) == typeid(Texture)) {
 			if (!m_TextureMap.contains(h)) return resource;
-			resource = static_cast<T*>(static_cast<D3D11Resource*>(m_TextureMap[h].get()));
+			resource = static_cast<T*>(static_cast<Resource*>(m_TextureMap[h].get()));
 		}
 
 		return resource;

@@ -85,10 +85,8 @@
     <ClInclude Include="src\Renderer\Core\Helpers.h" />
     <ClInclude Include="src\Renderer\Core\Lights.h" />
     <ClInclude Include="src\Renderer\Core\Math.h" />
-    <ClInclude Include="src\Renderer\Core\ResourceGPU.h" />
-    <ClInclude Include="src\Renderer\Core\ResourcesCPU.h" />
     <ClInclude Include="src\Renderer\Core\uuid.h" />
-    <ClInclude Include="src\Renderer\D3D11\D3D11Resources.h" />
+    <ClInclude Include="src\Renderer\Core\Resources.h" />
     <ClInclude Include="src\Renderer\D3D11\GraphicsDevice.h" />
     <ClInclude Include="src\Renderer\D3D11\RenderContext.h" />
     <ClInclude Include="src\Renderer\D3D11\ResourceProvider.h" />
@@ -97,11 +95,11 @@
     <ClInclude Include="src\Renderer\Render\PipelineStateContainer.h" />
     <ClInclude Include="src\Renderer\Render\RenderConstantBuffers.h" />
     <ClInclude Include="src\Renderer\Render\RenderContextInterface.h" />
+    <ClInclude Include="src\Renderer\Render\RenderGraph.h" />
     <ClInclude Include="src\Renderer\Render\RenderItem.h" />
     <ClInclude Include="src\Renderer\Render\RenderPassInterface.h" />
     <ClInclude Include="src\Renderer\Render\RenderTargetInterface.h" />
     <ClInclude Include="src\Renderer\Render\ResourceProviderInterface.h" />
-    <ClInclude Include="src\Renderer\Render\RenderGraph.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
   </ItemGroup>
   <ItemGroup>

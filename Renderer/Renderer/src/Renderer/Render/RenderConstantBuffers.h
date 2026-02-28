@@ -4,7 +4,7 @@
 
 namespace zRender {
 	__declspec(align(16)) struct Light {
-		int4 type; // x = { 0 = Directional / 1 = Point / 2 = Spot }
+		int4 type; // x = { 0 = Directional / 1 = Point / 2 = Spot }, y = castShadow
 
 		vec4 position;
 		vec4 direction;
@@ -13,6 +13,9 @@ namespace zRender {
 		/// x = Intensity, y = Range, z = InnerCone, w = OuterCone
 		/// </summary>
 		vec4 lightProp;
+
+		DirectX::XMMATRIX VPMatrix;
+		DirectX::XMMATRIX invVPMatrix;
 	};
 	__declspec(align(16)) struct LightData {
 		Light lights[8];
@@ -27,7 +30,7 @@ namespace zRender {
 	__declspec(align(16)) struct FrameData {
 		DirectX::XMMATRIX vpMatrix;
 		vec4 cameraPosition;
-		vec4 time; // x = delta, y = total
+		vec4 timeAndScreen; // x = delta, y = total, z = screenWidth, w = screenHeight
 	};
 
 	__declspec(align(16)) struct ObjectData {

@@ -42,6 +42,6 @@ namespace zRender {
 		float totalTime = 0.0f;
 
 	private:
-		void Render(IRenderContext* ctx, const std::vector<RenderItem>& items);
+		void Render(IRenderContext* ctx, const std::vector<RenderItem>* items);
 	};
 }

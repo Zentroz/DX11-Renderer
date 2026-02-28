@@ -10,27 +10,27 @@
     <Filter Include="Render">
       <UniqueIdentifier>{C5BB87CE-B15D-B2A4-9A18-C6F8865939F5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="RenderGraph">
-      <UniqueIdentifier>{57D96100-C38E-DAF5-4C83-D4CCB837D1F9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Renderer\Core\ErrorLogger.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Renderer\Core\Handles.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\Core\Helpers.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Renderer\Core\Lights.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Renderer\Core\Math.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\ResourceGPU.h">
+    <ClInclude Include="src\Renderer\Core\uuid.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Core\ResourcesCPU.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Renderer\D3D11\D3D11Resources.h">
+    <ClInclude Include="src\Renderer\Core\Resources.h">
       <Filter>D3D11</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\D3D11\GraphicsDevice.h">
@@ -57,6 +57,9 @@
     <ClInclude Include="src\Renderer\Render\RenderContextInterface.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="src\Renderer\Render\RenderGraph.h">
+      <Filter>Render</Filter>
+    </ClInclude>
     <ClInclude Include="src\Renderer\Render\RenderItem.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -69,15 +72,15 @@
     <ClInclude Include="src\Renderer\Render\ResourceProviderInterface.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\Render\RenderGraph.h">
-      <Filter>RenderGraph</Filter>
-    </ClInclude>
     <ClInclude Include="src\Renderer\Renderer.h" />
-    <ClInclude Include="src\Renderer\Core\ErrorLogger.h" />
-    <ClInclude Include="src\Renderer\Core\uuid.h" />
-    <ClInclude Include="src\Renderer\Core\Lights.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Renderer\Core\Math.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\Core\uuid.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp">
       <Filter>D3D11</Filter>
     </ClCompile>
@@ -91,10 +94,8 @@
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="src\Renderer\Render\RenderGraph.cpp">
-      <Filter>RenderGraph</Filter>
+      <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="src\Renderer\Renderer.cpp" />
-    <ClCompile Include="src\Renderer\Core\uuid.cpp" />
-    <ClCompile Include="src\Renderer\Core\Math.cpp" />
   </ItemGroup>
 </Project>

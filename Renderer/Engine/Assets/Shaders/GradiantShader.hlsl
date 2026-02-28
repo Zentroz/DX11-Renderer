@@ -13,7 +13,7 @@ float4 VSMain(uint id : SV_VertexID) : SV_Position
 
 float4 PSMain(float4 pos : SV_Position) : SV_Target
 {
-	float2 ScreenSize = float2(1536, 793);
+	float2 ScreenSize = float2(timeAndScreen.z, timeAndScreen.w);
 	float2 uv = pos.xy / ScreenSize;
 	
 	float3 topColor = float3(0, 0.32, 0.62);

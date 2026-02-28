@@ -1,32 +1,61 @@
 #include"Editor/ObjectPanel.h"
 #include<imgui/imgui.h>
+#include"Engine/Components.h"
 
-void ObjectPanel::Draw(std::vector<Material*> drawMaterials) {
-	if (ImGui::Begin("Objects")) {
-		for (auto mat : drawMaterials) {
-			ImGui::PushID(mat->name.c_str());
-			if (ImGui::CollapsingHeader(mat->name.c_str())) {
-				// Color
-				float m_ColorInput[3] = { mat->baseColor.x, mat->baseColor.y, mat->baseColor.z };
-				ImGui::Text("Color");
-				ImGui::SameLine();
-				if (ImGui::ColorEdit3("##oColor", m_ColorInput)) {
-					mat->baseColor = zRender::vec4(m_ColorInput[0], m_ColorInput[1], m_ColorInput[2], 1);
-				}
+void ObjectPanel::Draw(entt::entity entity, entt::registry& reg) {
+	if (!reg.valid(entity)) return;
 
-				// Roughness
-				ImGui::Text("Roughness");
-				ImGui::SameLine();
-				ImGui::SliderFloat("##oRoughness", &mat->roughnessFactor, 0, 1);
+	auto view = reg.view<TransformComponent, MaterialComponent>();
+	std::tuple<TransformComponent&, MaterialComponent&> components =  reg.get<TransformComponent, MaterialComponent>(entity);
 
-				// Metallic
-				ImGui::Text("Metallic");
-				ImGui::SameLine();
-				ImGui::SliderFloat("##oMetallic", &mat->metallicFactor, 0, 1);
+	TransformComponent& t = std::get<0>(components);
+	MaterialComponent& m = std::get<1>(components);
+
+	if (ImGui::Begin("Entity Properties")) {
+		std::string name = "Material";
+		ImGui::PushID(name.c_str());
+		if (ImGui::CollapsingHeader(name.c_str())) {
+			//Transform
+			ImGui::SeparatorText("Transform");
+			float m_PositionInput[3] = { t.position.x, t.position.y, t.position.z };
+			ImGui::Text("Position");
+			ImGui::SameLine();
+			if (ImGui::InputFloat3("##oPosition", m_PositionInput)) {
+				t.position = zRender::vec3(m_PositionInput[0], m_PositionInput[1], m_PositionInput[2]);
+			}
+			float m_ScaleInput[3] = { t.scale.x, t.scale.y, t.scale.z };
+			ImGui::Text("Scale");
+			ImGui::SameLine();
+			if (ImGui::InputFloat3("##oScale", m_ScaleInput)) {
+				t.scale = zRender::vec3(m_ScaleInput[0], m_ScaleInput[1], m_ScaleInput[2]);
 			}
 
-			ImGui::PopID();
+			// Material
+			ImGui::SeparatorText("Material");
+			// Color
+			float m_ColorInput[3] = { m.baseColor.x, m.baseColor.y, m.baseColor.z };
+			ImGui::Text("Color");
+			ImGui::SameLine();
+			if (ImGui::ColorEdit3("##oColor", m_ColorInput)) {
+				m.baseColor = zRender::vec4(m_ColorInput[0], m_ColorInput[1], m_ColorInput[2], 1);
+			}
+
+			// Roughness
+			ImGui::Text("Roughness");
+			ImGui::SameLine();
+			ImGui::SliderFloat("##oRoughness", &m.roughness, 0, 1);
+
+			// Metallic
+			ImGui::Text("Metallic");
+			ImGui::SameLine();
+			ImGui::SliderFloat("##oMetallic", &m.metallic, 0, 1);
+
+			// Toughness
+			ImGui::Text("Toughness");
+			ImGui::SameLine();
+			ImGui::SliderFloat("##oToughness", &m.toughness, 0, 1);
 		}
+		ImGui::PopID();
 	}
 	ImGui::End();
 

@@ -18,27 +18,27 @@ namespace zRender {
 	};
 
 	struct RenderPassContext {
-		IRenderContext* ctx;
-		Camera& renderCamera;
+		IRenderContext* ctx = nullptr;
+		const Camera* renderCamera = nullptr;
 
-		Light* lights;
-		int lightCount;
+		Light* lights = nullptr;
+		int lightCount = 0;
 
-		const std::vector<RenderItem>& renderItemsOpaque;
-		const std::vector<RenderItem>& renderItemsAplhaTest;
-		const std::vector<RenderItem>& renderItemsTransparent;
+		const std::vector<RenderItem>* renderItemsOpaque = nullptr;
+		const std::vector<RenderItem>* renderItemsAplhaTest = nullptr;
+		const std::vector<RenderItem>* renderItemsTransparent = nullptr;
 
-		RenderPassContext(
-			IRenderContext* ctx, Camera& renderCamera,
-			const std::vector<RenderItem>& renderItems,
-			const std::vector<RenderItem>& renderItemsAplhaTest,
-			const std::vector<RenderItem>& renderItemsTransparent,
-			Light* lights,
-			int lightCount
-		)
-			: ctx(ctx), renderCamera(renderCamera), renderItemsOpaque(renderItems), renderItemsTransparent(renderItemsTransparent), 
-			renderItemsAplhaTest(renderItemsAplhaTest), lights(lights), lightCount(lightCount)
-		{}
+		//RenderPassContext(
+		//	IRenderContext* ctx, Camera& renderCamera,
+		//	const std::vector<RenderItem>& renderItems,
+		//	const std::vector<RenderItem>& renderItemsAplhaTest,
+		//	const std::vector<RenderItem>& renderItemsTransparent,
+		//	Light* lights,
+		//	int lightCount
+		//)
+		//	: ctx(ctx), renderCamera(renderCamera), renderItemsOpaque(renderItems), renderItemsTransparent(renderItemsTransparent), 
+		//	renderItemsAplhaTest(renderItemsAplhaTest), lights(lights), lightCount(lightCount)
+		//{}
 	};
 
 	struct RenderPassDesc {

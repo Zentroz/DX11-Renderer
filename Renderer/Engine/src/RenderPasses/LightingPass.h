@@ -23,6 +23,13 @@ namespace zRender {
 			PipelineStateContainer pipeline;
 		};
 
+		struct LightPassShaderData {
+			Light lights[8];
+			int4 lightCount;
+			vec4 shadowBias;
+			int4 pcFilterSampleCount;
+		};
+
 	public:
 		LightingPass(const InitData& i);
 

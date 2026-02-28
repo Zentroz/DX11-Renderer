@@ -29,6 +29,7 @@ namespace zRender {
         TextureFormat_R8_UNorm,           // Masks, grayscale
         TextureFormat_R16F,
         TextureFormat_R32F,
+        TextureFormat_R32Uint,
         TextureFormat_RG16F,
         TextureFormat_RG32F,
 
@@ -61,7 +62,10 @@ namespace zRender {
     enum DepthFunc {
         DepthFunc_Always,
         DepthFunc_Never,
-        DepthFunc_LessEqual
+        DepthFunc_LessEqual,
+        DepthFunc_Less,
+        DepthFunc_Greater,
+        DepthFunc_GreaterEqual,
     };
     
     class IRenderResourceProvider

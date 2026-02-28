@@ -1,48 +1,59 @@
 #include"Engine.h"
+#include"Engine/Components.h"
+#include"Physics/Intersection.h"
 
 // RenderPasses
 #include"RenderPasses/GBufferPass.h"
+#include"RenderPasses/ShadowPass.h"
 #include"RenderPasses/LightingPass.h"
 #include"RenderPasses/GradiantPass.h"
 #include"RenderPasses/PresentPass.h"
 
 using namespace zRender;
 
-struct MatData {
-	vec4 baseColor;
-	float roughness;
-	float metallic;
-	vec2 padding;
-};
-
 void Engine::Init(const EngineInitData& initData) {
-	graphicsDevice.Initialize(initData.hWnd);
+	graphicsDevice = std::make_unique<D3D11Device>();
+	graphicsDevice->Initialize(initData.hWnd);
 
-	resourceProvider = std::make_unique<D3D11ResourceProvider>(&graphicsDevice);
-	renderContext = std::make_unique<D3D11RenderContext>(graphicsDevice.GetDeviceContext(), graphicsDevice.GetSwapChain(), resourceProvider.get());
+	resourceProvider = std::make_unique<D3D11ResourceProvider>(graphicsDevice.get());
+	renderContext = std::make_unique<D3D11RenderContext>(graphicsDevice->GetDeviceContext(), graphicsDevice->GetSwapChain(), resourceProvider.get());
 
 	renderer.Setup(renderContext.get(), resourceProvider.get());
+
+	Camera cam{};
+	cam.up = vec3(0, 1, 0);
+	cam.forward = normalize(vec3(0, -2, -1));
+	cam.position = vec3(0, 0, 0) - cam.forward * 50;
+	cam.width = 4096;
+	cam.height = 4096;
+	cam.renderMode = Camera::Orthographic;
+
+	DirectX::XMMATRIX lightVP = cam.ViewProjMatrix();
+
 	renderer.AddLight(
 		{
 			.type = { 0, 0, 0, 0 },
-			.position = vec4(0, 4, 0, 1),
-			.direction = normalizeVec(vec4(-1, -1, 0)),
+			.position = vec4(cam.position.x, cam.position.y, cam.position.z, 1),
+			.direction = vec4(cam.forward.x, cam.forward.y, cam.forward.z, 1),
 			.lightColor = vec4(1, 1, 1, 1),
-			.lightProp = vec4(2, 0, 0, 0)
+			.lightProp = vec4(1, 0, 0, 0),
+			.VPMatrix = lightVP,
+			.invVPMatrix = DirectX::XMMatrixInverse(nullptr, lightVP)
 		}
 	);
 
 	CreatePipelines();
 	CreateRenderPasses(initData.width, initData.height);
 	
-	UI::Setup(initData.hWnd, graphicsDevice.GetDevice(), graphicsDevice.GetDeviceContext());
+	UI::Setup(initData.hWnd, graphicsDevice->GetDevice(), graphicsDevice->GetDeviceContext());
 
 	freeCamera.GetCamera().width = initData.width;
 	freeCamera.GetCamera().height = initData.height;
 
 	renderContext->SetScreenSize(initData.width, initData.height);
+	renderer.SetScreenSize(initData.width, initData.height);
 
-	OpenModelFile("Assets/Mesh/sponza/scene.gltf");
+	OpenModelFile("Assets/others/shadow_test.fbx");
 }
 
 void Engine::CleanUp() {
@@ -53,7 +64,7 @@ void Engine::CleanUp() {
 	renderContext.release();
 	resourceProvider.release();
 
-	graphicsDevice.Release();
+	graphicsDevice->Release();
 }
 
 void Engine::QueueResize(int newWidth, int newHeight, bool fullscreen) {
@@ -65,14 +76,15 @@ void Engine::QueueResize(int newWidth, int newHeight, bool fullscreen) {
 
 void Engine::Resize(int newWidth, int newHeight, bool fullscreen) {
 	resourceProvider->ReleaseScreenTexture();
-	graphicsDevice.Resize(newWidth, newHeight, fullscreen);
+	graphicsDevice->Resize(newWidth, newHeight, fullscreen);
 
 	resourceProvider->RecreateScreenTextureHandle();
-	//CreateRenderPasses(newWidth, newHeight);
 	renderContext->SetScreenSize(newWidth, newHeight);
 
 	freeCamera.GetCamera().width = newWidth;
 	freeCamera.GetCamera().height = newHeight;
+
+	renderer.SetScreenSize(newWidth, newHeight);
 
 	resize = false;
 }
@@ -84,14 +96,19 @@ void Engine::Run() {
 
 	UI::NewFrame();
 
-	objectPanel.Draw(scene.GetAssetManager().GetAllMaterials());
+	freeCamera.Update();
+
+	if (ImGui::GetIO().MouseDown[1]) {
+		Intersect(intersectedEntity);
+	}
+
+	objectPanel.Draw(intersectedEntity, scene.GetRegistry());
 	presentPass->SetOutputTextureIndex(objectPanel.GetSelectedRenderOutput());
 
 	for (auto& item : scene.GenerateDrawCalls()) {
 		renderer.Queue(item);
 	}
 
-	freeCamera.Update();
 	renderer.SetCamera(freeCamera.GetCamera());
 
 	renderer.InitRender();
@@ -99,11 +116,12 @@ void Engine::Run() {
 	renderer.EndRender();
 
 	UI::Render();
-
 	renderContext->EndFrame();
 }
 
 void Engine::OpenModelFile(const std::string& path) {
+	entt::registry& registry = scene.GetRegistry();
+
 	ModelLoader modelLoader;
 	ModelAsset loadedModel;
 
@@ -113,6 +131,31 @@ void Engine::OpenModelFile(const std::string& path) {
 
 		for (auto m : loadedModel.materials) {
 			for (uint32_t subMeshIndex : m.subMeshIndices) {
+				auto e = registry.create();
+
+				DirectX::XMVECTOR scale;
+				DirectX::XMVECTOR rotation;
+				DirectX::XMVECTOR position;
+				DirectX::XMMatrixDecompose(&scale, &rotation, &position, loadedModel.mesh->subMeshes[subMeshIndex].localModel);
+
+				registry.emplace<TransformComponent>(e,
+					vec3(DirectX::XMVectorGetX(position), DirectX::XMVectorGetY(position), DirectX::XMVectorGetZ(position)),
+					vec4(DirectX::XMVectorGetX(rotation), DirectX::XMVectorGetY(rotation), DirectX::XMVectorGetZ(rotation), DirectX::XMVectorGetW(rotation)),
+					vec3(DirectX::XMVectorGetX(scale), DirectX::XMVectorGetY(scale), DirectX::XMVectorGetZ(scale))
+				);
+
+				registry.emplace<MeshFilter>(e, model.meshHandle, subMeshIndex);
+
+				MaterialComponent material{
+					.baseColor = m.baseColor,
+					.roughness = m.roughnessFactor,
+					.metallic = m.metallicFactor,
+					.toughness = 0.5,
+					.alphaCutoff = m.aplhaCutoff,
+					.surfaceType = m.renderMode == ModelAsset::Material::Transparent ? Transparent : Opaque,
+					.alphaClipping = m.aplhaCutoff < 0.99999f
+				};
+
 				Material mat;
 				mat.name = loadedModel.mesh->subMeshes[subMeshIndex].name;
 				mat.baseColor = m.baseColor;
@@ -122,20 +165,24 @@ void Engine::OpenModelFile(const std::string& path) {
 				mat.renderMode = (Material::RenderMode)m.renderMode;
 
 				if (loadedModel.textures.contains(m.albedoTextureName)) {
-					TextureCPU* tex = loadedModel.textures[m.albedoTextureName];
+					Texture* tex = loadedModel.textures[m.albedoTextureName];
 					tex->usageFlags = (uint32_t)TextureUsageFlags::TextureUsageFlag_ShaderResource;
 					mat.albedo = resourceProvider->LoadTexture(*tex);
+					material.albedoTexture = mat.albedo;
 				}
 				if (loadedModel.textures.contains(m.normalTextureName)) {
-					TextureCPU* tex = loadedModel.textures[m.normalTextureName];
+					Texture* tex = loadedModel.textures[m.normalTextureName];
 					tex->usageFlags = (uint32_t)TextureUsageFlags::TextureUsageFlag_ShaderResource;
 					mat.normal = resourceProvider->LoadTexture(*tex);
+					material.normalTexture = mat.normal;
 				}
 				if (loadedModel.textures.contains(m.rmTextureName)) {
-					TextureCPU* tex = loadedModel.textures[m.rmTextureName];
+					Texture* tex = loadedModel.textures[m.rmTextureName];
 					tex->usageFlags = (uint32_t)TextureUsageFlags::TextureUsageFlag_ShaderResource;
 					mat.orm = resourceProvider->LoadTexture(*tex);
+					material.ormTexture = mat.orm;
 				}
+				registry.emplace<MaterialComponent>(e, material);
 
 				Model::SubMesh sub;
 				sub.submeshIndex = subMeshIndex;
@@ -145,15 +192,6 @@ void Engine::OpenModelFile(const std::string& path) {
 				model.subMeshes.push_back(sub);
 			}
 		}
-
-		Entity loadedMesh;
-		loadedMesh.model = scene.GetAssetManager().AddModel(model);
-		loadedMesh.modelMatrix = loadedModel.modelMatrix;
-		loadedMesh.baseColor = vec4(1, 1, 1, 1);
-		loadedMesh.roughness = 1;
-		loadedMesh.metallic = 0;
-
-		scene.AddEntity(loadedMesh);
 	}
 	else {
 		printf("Failed to load model at path: %s \n", path.c_str());
@@ -162,58 +200,90 @@ void Engine::OpenModelFile(const std::string& path) {
 	loadedModel.Dispose();
 }
 
+bool Engine::Intersect(entt::entity& outEntity) {
+	vec3 rayO = freeCamera.GetCamera().position;
+	vec3 target = freeCamera.GetCamera().position + freeCamera.GetCamera().forward;
+	vec3 rayD = normalize(target - rayO);
+
+	auto& reg = scene.GetRegistry();
+	auto view = reg.view<const TransformComponent, const MeshFilter>();
+
+	entt::entity closest;
+	float nearestDist = D3D11_FLOAT32_MAX;
+
+	const auto multiplyMatrixVector = [](DirectX::XMMATRIX matrix, vec3 vector) -> vec3 {
+		DirectX::XMVECTOR v = DirectX::XMVectorSet(vector.x, vector.y, vector.z, 1);
+		auto res = DirectX::XMVector3Transform(v, matrix);
+
+		return vec3(DirectX::XMVectorGetX(res), DirectX::XMVectorGetY(res), DirectX::XMVectorGetZ(res));
+	};
+
+	view.each(
+		[&](const auto e, const TransformComponent& tc, const MeshFilter& m) {
+			Mesh* mesh = resourceProvider->GetResource<Mesh>(m.mesh);
+			SubMesh& sub = mesh->subMeshes[m.subMeshIndex];
+
+			for (size_t i = 0; i < sub.indexCount / 3; i++) {
+				size_t baseIndex = sub.indexOffset + i * 3;
+
+				const Vertex& v0 = mesh->vertices[mesh->indices[baseIndex]];
+				const Vertex& v1 = mesh->vertices[mesh->indices[baseIndex + 1]];
+				const Vertex& v2 = mesh->vertices[mesh->indices[baseIndex + 2]];
+
+				float t, u, v;
+
+				DirectX::XMMATRIX model = tc.Model();
+
+				if (IsRayIntersecting(rayO, rayD, multiplyMatrixVector(model, v0.position), multiplyMatrixVector(model, v1.position), multiplyMatrixVector(model, v2.position), t, u, v)) {
+					vec3 hitPoint = rayO + rayD * t;
+
+					if (t < nearestDist) {
+						closest = e;
+						nearestDist = t;
+					}
+
+					printf("Intersection at : (x: %f, y: %f, z: %f), Distance: %f, Barycentric Coords: (u: %f, v: %f)\n", hitPoint.x, hitPoint.y, hitPoint.z, t, u, v);
+				}
+			}
+		}
+	);
+
+	if (!reg.valid(closest)) {
+		return false;
+	}
+
+	outEntity = closest;
+	return true;
+}
+
 void Engine::CreatePipelines() {
 	ShaderLoader shaderLoader;
 
-	ShaderCPU gDebugShader;
-	gDebugShader.inputLayout = InputLayout_None;
-	shaderLoader.Load(gDebugShader, "Assets/Shaders/GeometryDebugShader.hlsl");
-
-	ShaderCPU gShader;
-	gShader.inputLayout = InputLayout_PNTT;
+	Shader gShader;
+	gShader.inputLayoutFlag = InputLayout_PNTT;
 	shaderLoader.Load(gShader, "Assets/Shaders/GeometryShader.hlsl");
 
-	ShaderCPU pbrShader;
-	pbrShader.inputLayout = InputLayout_PNTT;
-	shaderLoader.Load(pbrShader, "Assets/Shaders/pbr.hlsl");
-
-	ShaderCPU sShader;
-	sShader.inputLayout = InputLayout_PNTT;
+	Shader sShader;
+	sShader.inputLayoutFlag = InputLayout_PNTT;
 	shaderLoader.Load(sShader, "Assets/Shaders/ShadowShader.hlsl");
 
-	ShaderCPU lightShader;
-	lightShader.inputLayout = InputLayout_None;
+	Shader lightShader;
+	lightShader.inputLayoutFlag = InputLayout_None;
 	shaderLoader.Load(lightShader, "Assets/Shaders/LightingShader.hlsl");
 
-	ShaderCPU gradiantShader;
-	gradiantShader.inputLayout = InputLayout_None;
+	Shader gradiantShader;
+	gradiantShader.inputLayoutFlag = InputLayout_None;
 	shaderLoader.Load(gradiantShader, "Assets/Shaders/GradiantShader.hlsl");
 
-	ShaderCPU presentShader;
-	presentShader.inputLayout = InputLayout_None;
+	Shader presentShader;
+	presentShader.inputLayoutFlag = InputLayout_None;
 	shaderLoader.Load(presentShader, "Assets/Shaders/PresentShader.hlsl");
-
-	resourceProvider->AddPipelineStateContainer({
-		.name = "PBROpaque",
-		.shaderHandle = resourceProvider->LoadShader(pbrShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never),
-		.topology = PrimitiveTopology_Triangelist
-	});
-
-	resourceProvider->AddPipelineStateContainer({
-		.name = "GBufferDebug",
-		.shaderHandle = resourceProvider->LoadShader(gDebugShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never),
-		.topology = PrimitiveTopology_Triangelist
-	});
 
 	resourceProvider->AddPipelineStateContainer({
 		.name = "GBufferPass",
 		.shaderHandle = resourceProvider->LoadShader(gShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never),
+		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_Back, RasterizerFunc_FillMode_Solid),
+		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_All, DepthFunc_Less),
 		.topology = PrimitiveTopology_Triangelist
 	});
 
@@ -221,16 +291,8 @@ void Engine::CreatePipelines() {
 	resourceProvider->AddPipelineStateContainer({
 		.name = "ShadowPass",
 		.shaderHandle = resourceProvider->LoadShader(sShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never),
-		.topology = PrimitiveTopology_Triangelist
-	});
-
-	resourceProvider->AddPipelineStateContainer({
-		.name = "PresentPass",
-		.shaderHandle = resourceProvider->LoadShader(presentShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never),
+		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_Back, RasterizerFunc_FillMode_Solid),
+		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_All, DepthFunc_Less),
 		.topology = PrimitiveTopology_Triangelist
 	});
 
@@ -249,27 +311,23 @@ void Engine::CreatePipelines() {
 		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_LessEqual),
 		.topology = PrimitiveTopology_Triangelist
 	});
+
+	resourceProvider->AddPipelineStateContainer({
+		.name = "PresentPass",
+		.shaderHandle = resourceProvider->LoadShader(presentShader),
+		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
+		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never),
+		.topology = PrimitiveTopology_Triangelist
+	});
 }
 
 void Engine::CreateRenderPasses(int width, int height) {
-	// Directional Light Shadow
-	/*
-	ShadowPass::InitData shadowInit;
-	shadowInit.depthSV = resourceProvider->CreateTexture(width, height, TextureFormat_R32_Typeless, TextureUsageFlags::TextureUsageFlag_DepthStencil | TextureUsageFlags::TextureUsageFlag_ShaderResource);
-	shadowInit.frameBufferHandle = frameBufferHandle;
-	shadowInit.objectBufferHandle = objectBufferHandle;
-	shadowInit.pipeline = resourceProvider->GetPipelineStateContainer("ShadowPass");
-
-	ShadowPass* shadow = new ShadowPass(shadowInit);
-	renderGraph.AddPass(shadow);
-	*/
-
 	StaticData sData{
 		.mainLightDirection = { 0.25, 0.5f, -0.25f, 1 },
 		.mainLightColor = { 1, 1, 1, 1 }
 	};
 
-	vec3 cPos = { 0, 1, -5 };
+	vec3 cPos(0, 1, -5);
 
 	FrameData fData{
 		.vpMatrix = DirectX::XMMatrixIdentity(),
@@ -294,7 +352,6 @@ void Engine::CreateRenderPasses(int width, int height) {
 	BufferHandle frameBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(FrameData), &fData);
 	BufferHandle objectBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(ObjectData), &oData);
 	BufferHandle materialBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(MaterialData), &mData);
-	BufferHandle lightBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(LightData), &mData);
 
 	GBuffer gData = {
 		.albedoRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Linear),
@@ -309,18 +366,29 @@ void Engine::CreateRenderPasses(int width, int height) {
 		.pipelineStateHandles = resourceProvider->GetPipelineStateContainer("GBufferPass")
 	};
 	renderer.AddRenderPass(new GBufferPass(gData));
+	ShadowPass::LightBuffer shadowLightData{};
+	ShadowPass::InitData shadowInit{
+		.depthSV = resourceProvider->CreateTexture(4096, 4096, TextureFormat_R32_Typeless, TextureUsageFlags::TextureUsageFlag_DepthStencil | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Point),
+		.debugRT = resourceProvider->CreateTexture(4096, 4096, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Linear),
+		.lightBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(ShadowPass::LightBuffer), &shadowLightData),
+		.objectBufferHandle = objectBufferHandle,
+		.pipeline = resourceProvider->GetPipelineStateContainer("ShadowPass")
+	};
+	renderer.AddRenderPass(new ShadowPass(shadowInit));
 
 	LightingPass::MatricesBufferData lpmData;
 	lpmData.invViewProj = DirectX::XMMatrixIdentity();
+
+	LightingPass::LightPassShaderData lightPassShaderData{};
 
 	LightingPass::InitData lightPassData{
 		.albedoRT = gData.albedoRT,
 		.normalRT = gData.normalRT,
 		.materialRT = gData.materialRT,
 		.depthRT = gData.depthRT,
-		.shadowDSV = {},
-		.outputRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Linear),
-		.lightBufferHandle = lightBufferHandle,
+		.shadowDSV = shadowInit.depthSV,
+		.outputRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA16F, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Linear),
+		.lightBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(LightingPass::LightPassShaderData), &lightPassShaderData),
 		.matricesBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(LightingPass::MatricesBufferData), &lpmData),
 		.pipeline = resourceProvider->GetPipelineStateContainer("LightPass")
 	};

@@ -8,7 +8,10 @@ project "Engine"
 
    files {
         "src/**.h",
-        "src/**.cpp"
+        "src/**.cpp",
+        "externals/stb/**.h",
+        "externals/stb/**.cpp",
+        "externals/entt/include/entt/entt.hpp",
    }
 
    includedirs {
@@ -16,6 +19,7 @@ project "Engine"
        "%{wks.location}/Renderer/src",
        "externals/assimp/include",
        "externals/stb",
+       "externals/entt/include",
        "externals/imgui/include"
    }
 

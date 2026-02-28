@@ -10,6 +10,8 @@
 #include<Renderer/D3D11/ResourceProvider.h>
 #include<Renderer/Renderer.h>
 
+#include<entt/entt.hpp>
+
 struct EngineInitData {
 	int width;
 	int height;
@@ -37,9 +39,10 @@ private:
 	int newWidth;
 	int newHeight;
 	bool fullscreen;
+	entt::entity intersectedEntity;
 
 	zRender::Renderer renderer{};
-	zRender::D3D11Device graphicsDevice{};
+	std::unique_ptr<zRender::D3D11Device> graphicsDevice;
 	std::unique_ptr<zRender::D3D11ResourceProvider> resourceProvider;
 	std::unique_ptr<zRender::D3D11RenderContext> renderContext;
 
@@ -48,4 +51,6 @@ private:
 	void CreateRenderPasses(int width, int height);
 	void RebuildRenderPass(int width, int height);
 	void Resize(int newWidth, int newHeight, bool fullscreen);
+
+	bool Intersect(entt::entity& outEntity);
 };

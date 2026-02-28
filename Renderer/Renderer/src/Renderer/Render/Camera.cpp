@@ -35,11 +35,14 @@ namespace zRender {
 			proj = XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(fov), width / height, nearPlane, farPlane);
 			break;
 		case Orthographic:
-			proj = XMMatrixOrthographicLH(width, height, nearPlane, farPlane);
+			float orthoWidth = 40.0f;
+			float orthoHeight = orthoWidth * (height / width);
+
+			proj = XMMatrixOrthographicLH(orthoWidth, orthoHeight, nearPlane, farPlane);
 			break;
 		}
 
-		return XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(fov), width / height, nearPlane, farPlane);
+		return proj;
 	}
 
 }

@@ -21,9 +21,9 @@ namespace zRender {
 	void TransparentPass::Execute(const RenderPassContext& ctx) {
 		ctx.ctx->BindPipeline(pipelineStateHandles);
 
-		vec3 pos = ctx.renderCamera.position;
+		vec3 pos = ctx.renderCamera->position;
 		FrameData fData;
-		fData.vpMatrix = DirectX::XMMatrixTranspose(ctx.renderCamera.ViewProjMatrix());
+		fData.vpMatrix = DirectX::XMMatrixTranspose(ctx.renderCamera->ViewProjMatrix());
 		fData.cameraPosition = { pos.x, pos.y, pos.z, 1 };
 		ctx.ctx->UpdateBuffer(frameBufferHandle, 0, &fData);
 
@@ -32,7 +32,7 @@ namespace zRender {
 		ctx.ctx->BindBufferVS(1, frameBufferHandle);
 		ctx.ctx->BindBufferPS(1, frameBufferHandle);
 
-		for (auto& item : ctx.renderItemsTransparent) {
+		for (auto& item : *ctx.renderItemsTransparent) {
 			MaterialData mData;
 			mData.diffuseColor = item.materialData.baseColor;
 			mData.roughness = item.materialData.roughness;

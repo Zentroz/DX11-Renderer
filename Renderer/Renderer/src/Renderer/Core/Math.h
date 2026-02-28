@@ -9,17 +9,6 @@ namespace zRender{
 	struct vec3 {
 		float x, y, z;
 
-		float distance() const {
-			return sqrt(x * x + y * y + z * z);
-		}
-
-		static void normalize(vec3& vector) {
-			float dist = vector.distance();
-			vector.x /= dist; 
-			vector.y /= dist; 
-			vector.z /= dist;
-		}
-
 		friend vec3 operator+(const vec3& lhs, const vec3& rhs) {
 			return { lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z };
 		}
@@ -38,18 +27,28 @@ namespace zRender{
 		int x, y, z, w;
 	};
 
-	inline float sqrDistVec(const vec3& v) {
+	inline float sqrDist(const vec3& v) {
 		return v.x * v.x + v.y * v.y + v.z * v.z;
 	}
-	inline float sqrDistVec(const vec4& v) {
+	inline float sqrDist(const vec4& v) {
 		return v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w;
 	}
-	inline vec3 normalizeVec(const vec3& v) {
-		float length = sqrt(sqrDistVec(v));
+	inline vec3 normalize(const vec3& v) {
+		float length = sqrt(sqrDist(v));
 		return vec3(v.x / length, v.y / length, v.z / length);
 	}
-	inline vec4 normalizeVec(const vec4& v) {
-		float length = sqrt(sqrDistVec(v));
+	inline vec4 normalize(const vec4& v) {
+		float length = sqrt(sqrDist(v));
 		return vec4(v.x / length, v.y / length, v.z / length, v.w / length);
+	}
+	inline vec3 cross(const vec3& a, const vec3& b) {
+		return {
+			a.y * b.z - a.z * b.y,
+			a.z * b.x - a.x * b.z,
+			a.x * b.y - a.y * b.x
+		};
+	}
+	inline float dot(const vec3& a, const vec3& b) {
+		return a.x * b.x + a.y * b.y + a.z * b.z;
 	}
 }

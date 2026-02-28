@@ -10,6 +10,9 @@
 /// Flags to enable rendering settings.
 /// </summary>
 enum RenderFlag { None = 0, RenderFlag_CastShadows = 1 << 0, RenderFlag_ReceiveShadows = 1 << 1 };
+enum SurfaceType {
+	Opaque, Transparent
+};
 
 namespace zRender {
 
@@ -17,7 +20,8 @@ namespace zRender {
 	/// Item to be rendered.
 	/// </summary>
 	struct RenderItem {
-		int flags;
+		uint32_t flags;
+
 		uint32_t subMeshIndex;
 
 		MeshHandle meshHandle;
@@ -28,11 +32,12 @@ namespace zRender {
 			float roughness;
 			float metallic;
 
-			enum RenderMode { Opaque, AplhaTest, Transparent } renderMode;
+			SurfaceType surfaceType;
 
 			ShaderHandle shaderHandle;
 			std::vector<TextureHandle> textureHandles;
 
+			bool aplhaClipping;
 			float aplhaCutoff;
 		} materialData;
 

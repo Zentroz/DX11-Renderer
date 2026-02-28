@@ -57,7 +57,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;..\Renderer\src;externals\assimp\include;externals\stb;externals\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\Renderer\src;externals\assimp\include;externals\stb;externals\entt\include;externals\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -73,7 +73,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;..\Renderer\src;externals\assimp\include;externals\stb;externals\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\Renderer\src;externals\assimp\include;externals\stb;externals\entt\include;externals\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -85,22 +85,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="externals\entt\include\entt\entt.hpp" />
     <ClInclude Include="externals\stb\stb_image\stb_image.h" />
     <ClInclude Include="src\Editor\ObjectPanel.h" />
     <ClInclude Include="src\Editor\UI.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Engine\AssetManager.h" />
+    <ClInclude Include="src\Engine\Components.h" />
     <ClInclude Include="src\Engine\MaterialManager.h" />
     <ClInclude Include="src\Engine\Scene.h" />
-    <ClInclude Include="src\RenderPasses\GBufferDebugPass.h" />
     <ClInclude Include="src\RenderPasses\GBufferPass.h" />
     <ClInclude Include="src\RenderPasses\GradiantPass.h" />
     <ClInclude Include="src\RenderPasses\LightingPass.h" />
+    <ClInclude Include="src\RenderPasses\PostProcessingPass.h" />
     <ClInclude Include="src\RenderPasses\PresentPass.h" />
     <ClInclude Include="src\RenderPasses\ShadowPass.h" />
     <ClInclude Include="src\RenderPasses\TransparentPass.h" />
     <ClInclude Include="src\Utility\AssetLoader.h" />
     <ClInclude Include="src\Utility\FreelookCamera.h" />
+    <ClInclude Include="src\Physics\Intersection.h" />
     <ClInclude Include="src\Utility\TexturePacker.h" />
     <ClInclude Include="src\Window\ChiliWin.h" />
     <ClInclude Include="src\Window\Window.h" />
@@ -113,15 +116,16 @@
     <ClCompile Include="src\Engine\AssetManager.cpp" />
     <ClCompile Include="src\Engine\MaterialManager.cpp" />
     <ClCompile Include="src\Engine\Scene.cpp" />
-    <ClCompile Include="src\RenderPasses\GBufferDebugPass.cpp" />
     <ClCompile Include="src\RenderPasses\GBufferPass.cpp" />
     <ClCompile Include="src\RenderPasses\GradiantPass.cpp" />
     <ClCompile Include="src\RenderPasses\LightingPass.cpp" />
+    <ClCompile Include="src\RenderPasses\PostProcessingPass.cpp" />
     <ClCompile Include="src\RenderPasses\PresentPass.cpp" />
     <ClCompile Include="src\RenderPasses\ShadowPass.cpp" />
     <ClCompile Include="src\RenderPasses\TransparentPass.cpp" />
     <ClCompile Include="src\Utility\AssetLoader.cpp" />
     <ClCompile Include="src\Utility\FreeLookCamera.cpp" />
+    <ClCompile Include="src\Physics\Intersection.cpp" />
     <ClCompile Include="src\WinMain.cpp" />
     <ClCompile Include="src\Window\Window.cpp" />
   </ItemGroup>

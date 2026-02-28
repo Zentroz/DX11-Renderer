@@ -47,13 +47,17 @@ namespace zRender {
 
 		auto& io = ImGui::GetIO();
 
-		vec3 pos = ctx.renderCamera.position;
+		vec3 pos = ctx.renderCamera->position;
 		FrameData fData;
-		fData.vpMatrix = DirectX::XMMatrixTranspose(ctx.renderCamera.ViewProjMatrix());
+		fData.vpMatrix = DirectX::XMMatrixTranspose(ctx.renderCamera->ViewProjMatrix());
 		fData.cameraPosition = { pos.x, pos.y, pos.z, 1 };
-		fData.time = { io.DeltaTime, totalTime += io.DeltaTime, 0, 0 };
-		ctx.ctx->UpdateBuffer(frameBufferHandle, 0, &fData);
-		
+		fData.timeAndScreen = {
+			.x = io.DeltaTime, 
+			.y = totalTime += io.DeltaTime, 
+			.z = (float)ctx.renderCamera->width, 
+			.w = (float)ctx.renderCamera->height
+		};
+		ctx.ctx->UpdateBuffer(frameBufferHandle, sizeof(FrameData), &fData);
 
 		ctx.ctx->BindBufferVS(0, staticBufferHandle);
 		ctx.ctx->BindBufferPS(0, staticBufferHandle);
@@ -64,8 +68,8 @@ namespace zRender {
 		Render(ctx.ctx, ctx.renderItemsAplhaTest);
 	}
 
-	void GBufferPass::Render(IRenderContext* ctx, const std::vector<RenderItem>& items) {
-		for (auto& item : items) {
+	void GBufferPass::Render(IRenderContext* ctx, const std::vector<RenderItem>* items) {
+		for (auto& item : *items) {
 			MaterialData mData;
 			mData.diffuseColor = item.materialData.baseColor;
 			mData.roughness = item.materialData.roughness;

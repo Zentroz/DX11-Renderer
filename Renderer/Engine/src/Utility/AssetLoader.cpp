@@ -15,19 +15,20 @@
 #include<filesystem>
 #include<Utility/TexturePacker.h>
 
-bool MeshLoader::Load(zRender::MeshCPU& mesh, const std::string& path) {
+bool MeshLoader::Load(zRender::Mesh& mesh, const std::string& path) {
 	return true;
 }
 
 void TextureLoader::FlipImage(bool flip) {
 	stbi_set_flip_vertically_on_load(flip);
 }
-bool TextureLoader::Load(zRender::TextureCPU& texture, const std::string& path) {
-	texture.pixels = stbi_load(path.c_str(), &texture.width, &texture.height, &texture.channels, 4);
+bool TextureLoader::Load(zRender::Texture& texture, const std::string& path) {
+	texture.pixels = reinterpret_cast<zRender::Pixel*>(stbi_load(path.c_str(), &texture.width, &texture.height, &texture.channels, 4));
+
 	return texture.pixels != nullptr;
 }
 
-bool ShaderLoader::Load(zRender::ShaderCPU& shader, const std::string& path) {
+bool ShaderLoader::Load(zRender::Shader& shader, const std::string& path) {
 	std::ifstream file(path);
 	std::string file_contents;
 
@@ -72,7 +73,7 @@ void ModelAsset::Dispose() {
 	textures.clear();
 }
 
-bool LoadTextureFromAiScene(TextureCPU** pTexture, aiTextureType type, uint32_t index, const aiMaterial* material, const aiScene* scene, fs::path meshPath) {
+bool LoadTextureFromAiScene(Texture** pTexture, aiTextureType type, uint32_t index, const aiMaterial* material, const aiScene* scene, fs::path meshPath) {
 	uint32_t count = material->GetTextureCount(type);
 	if (index < count) {
 		aiString pathStr;
@@ -82,7 +83,7 @@ bool LoadTextureFromAiScene(TextureCPU** pTexture, aiTextureType type, uint32_t 
 
 		if (ret == aiReturn_SUCCESS) {
 			if (path[0] == '*') {
-				(*pTexture) = new TextureCPU();
+				(*pTexture) = new Texture();
 
 				int index = atoi(path + 1);
 				aiTexture* texture = scene->mTextures[index];
@@ -94,16 +95,16 @@ bool LoadTextureFromAiScene(TextureCPU** pTexture, aiTextureType type, uint32_t 
 					(*pTexture)->channels = 4;
 
 					int pixelCount = texture->mWidth * texture->mHeight;
-					(*pTexture)->pixels = new unsigned char[pixelCount * 4];
+					(*pTexture)->pixels = new Pixel[pixelCount];
 
 					aiTexel* src = texture->pcData;
 					(*pTexture)->channels = 4;
 
 					for (size_t i = 0; i < pixelCount; i++) {
-						(*pTexture)->pixels[i * 4 + 0] = src[i].r;
-						(*pTexture)->pixels[i * 4 + 1] = src[i].g;
-						(*pTexture)->pixels[i * 4 + 2] = src[i].b;
-						(*pTexture)->pixels[i * 4 + 3] = src[i].a;
+						(*pTexture)->pixels[i].r = src[i].r;
+						(*pTexture)->pixels[i].g = src[i].g;
+						(*pTexture)->pixels[i].b = src[i].b;
+						(*pTexture)->pixels[i].a = src[i].a;
 					}
 				}
 				else {
@@ -128,7 +129,7 @@ bool LoadTextureFromAiScene(TextureCPU** pTexture, aiTextureType type, uint32_t 
 						return false;
 					}
 
-					TextureCPU* tex = new TextureCPU();
+					Texture* tex = new Texture();
 					tex->width = width;
 					tex->height = height;
 					tex->channels = channels;
@@ -151,7 +152,7 @@ bool LoadTextureFromAiScene(TextureCPU** pTexture, aiTextureType type, uint32_t 
 					return false;
 				}
 
-				(*pTexture) = new TextureCPU();
+				(*pTexture) = new Texture();
 				TextureLoader loader;
 				if (!loader.Load(**pTexture, texturePath)) {
 					delete (*pTexture);
@@ -165,6 +166,207 @@ bool LoadTextureFromAiScene(TextureCPU** pTexture, aiTextureType type, uint32_t 
 	else return false;
 
 	return true;
+}
+
+void ProcessNode(ModelAsset& model, Mesh* rawMesh, int parentIndex, const aiScene* scene, const aiNode* node, uint64_t& totalVertexCount, uint64_t& totalIndexCount, const std::string& filepath) {
+	aiMatrix4x4 localTransform = node->mTransformation;
+
+	aiVector3D scaling;
+	aiQuaternion rotation;
+	aiVector3D position;
+	localTransform.Decompose(scaling, rotation, position);
+
+	DirectX::XMMATRIX localModel = DirectX::XMMatrixScaling(scaling.x, scaling.y, scaling.z)*
+		DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(rotation.x, rotation.y, rotation.z, rotation.w))*
+		DirectX::XMMatrixTranslation(position.x, position.y, position.z);
+
+	for (unsigned int index = 0; index < node->mNumMeshes; index++) {
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[index]];
+
+		SubMesh subMesh{};
+
+		subMesh.localModel = localModel;
+
+		subMesh.vertexOffset = totalVertexCount;
+		subMesh.indexOffset = totalIndexCount;
+
+		for (unsigned int z = 0; z < mesh->mNumVertices; z++)
+		{
+			Vertex vertex;
+
+			aiVector3D position = mesh->mVertices[z];
+			vertex.position = { position.x, position.y, position.z };
+			// Store vertex.x, vertex.y, vertex.z
+
+			// Normals
+			if (mesh->HasNormals()) // Check if normals exist
+			{
+				aiVector3D normal = mesh->mNormals[z];
+				vertex.normal = { normal.x, normal.y, normal.z };
+				// Store normal.x, normal.y, normal.z
+			}
+
+			// UV Coordinates (Texture Coordinates) - Assimp supports multiple UV channels (up to 4)
+			if (mesh->HasTextureCoords(0)) // Check for the first UV channel
+			{
+				aiVector3D uv = mesh->mTextureCoords[0][z];
+				vertex.uv = { uv.x, uv.y };
+				// Store uv.x, uv.y. The z component can be ignored for 2D textures.
+			}
+
+			if (mesh->HasTangentsAndBitangents()) {
+				aiVector3D tangent = mesh->mTangents[z];
+				vertex.tangent = { tangent.x, tangent.y, tangent.z };
+			}
+
+			rawMesh->vertices.push_back(vertex);
+
+			totalVertexCount++;
+		}
+
+		for (unsigned int z = 0; z < mesh->mNumFaces; z++)
+		{
+			const aiFace& face = mesh->mFaces[z];
+
+			for (unsigned int j = 0; j < face.mNumIndices; j++)
+			{
+				rawMesh->indices.push_back(face.mIndices[j]);
+				totalIndexCount++;
+			}
+		}
+
+		subMesh.vertexCount = totalVertexCount - subMesh.vertexOffset;
+		subMesh.indexCount = totalIndexCount - subMesh.indexOffset;
+
+		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+		bool isMaterialLoaded = true;
+
+		for (auto& mat : model.materials) {
+			if (mat.name == material->GetName().C_Str()) {
+				isMaterialLoaded = false;
+				mat.subMeshIndices.push_back(rawMesh->subMeshes.size());
+				break;
+			}
+		}
+
+		if (isMaterialLoaded) {
+			ModelAsset::Material mat;
+			mat.name = material->GetName().C_Str();
+			mat.subMeshIndices.push_back(rawMesh->subMeshes.size());
+
+			aiColor4D baseColor(1.0f, 1.0f, 1.0f, 1.0f);
+			aiString aplhaMode;
+			float roughness = 0;
+			float metallic = 0;
+			float opacity = 1;
+			float aplhaCutoff = 1;
+
+			//material->Get(AI_MATKEY_BASE_COLOR, baseColor);
+			material->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness);
+			material->Get(AI_MATKEY_METALLIC_FACTOR, metallic);
+			material->Get(AI_MATKEY_OPACITY, opacity);
+			material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, aplhaCutoff);
+
+			mat.renderMode = ModelAsset::Material::RenderMode::Opaque;
+
+			if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, aplhaMode) == aiReturn_SUCCESS) {
+				if (aplhaMode == aiString("MASK")) {
+					mat.renderMode = ModelAsset::Material::RenderMode::AplhaTest;
+				}
+				else if (aplhaMode == aiString("BLEND")) {
+					mat.renderMode = ModelAsset::Material::RenderMode::AplhaTest;
+				}
+			}
+
+			mat.baseColor = vec4(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+			mat.aplhaCutoff = aplhaCutoff;
+
+			auto containsTextureWithName = [&](std::string name) {
+				if (model.textures.contains(name)) return true;
+				return false;
+				};
+			auto addTextureIfDoesntExistOtherwiseDelete = [&](Texture* texture) {
+				std::string name = texture->name;
+				if (!model.textures.contains(texture->name)) model.textures[texture->name] = texture;
+				else {
+					delete texture;
+				}
+				return name;
+				};
+
+			Texture* albedo = nullptr;
+			if (LoadTextureFromAiScene(&albedo, aiTextureType_DIFFUSE, 0, material, scene, filepath)) {
+				mat.albedoTextureName = addTextureIfDoesntExistOtherwiseDelete(albedo);
+				albedo->filterMode = Texture::Linear;
+			}
+			Texture* normal = nullptr;
+			if (LoadTextureFromAiScene(&normal, aiTextureType_NORMALS, 0, material, scene, filepath)) {
+				normal->filterMode = Texture::FilterMode::Point;
+				mat.normalTextureName = addTextureIfDoesntExistOtherwiseDelete(normal);
+			}
+
+			Texture* packedORM = nullptr;
+			LoadTextureFromAiScene(&packedORM, aiTextureType_UNKNOWN, 0, material, scene, filepath);
+
+			if (packedORM) {
+				// // Combined Textures RM Format
+				mat.roughnessFactor = 1;
+				mat.metallicFactor = 1;
+
+				mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(packedORM);
+			}
+			else {
+				Texture* rough = nullptr;
+				Texture* metal = nullptr;
+
+				LoadTextureFromAiScene(&metal, aiTextureType_METALNESS, 0, material, scene, filepath);
+				LoadTextureFromAiScene(&rough, aiTextureType_DIFFUSE_ROUGHNESS, 0, material, scene, filepath);
+
+				if (rough && metal) {
+					mat.roughnessFactor = 1;
+					mat.metallicFactor = 1;
+
+					if (rough->name == metal->name) {
+						mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(rough);
+					}
+					else {
+						mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(PackTextureRM(rough, metal));
+					}
+				}
+				else if (rough || metal) {
+					Texture* orm = rough ? rough : metal;
+					mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(packedORM);
+
+					Texture* textureToDelete = (!rough) ? rough : metal;
+					delete textureToDelete;
+				}
+				else {
+					mat.roughnessFactor = roughness;
+					mat.metallicFactor = metallic;
+				}
+			}
+
+			if (!mat.rmTextureName.empty()) {
+				model.textures[mat.rmTextureName]->filterMode = Texture::FilterMode::Point;
+			}
+
+			model.materials.push_back(mat);
+		}
+
+		subMesh.name = node->mName.C_Str();
+		subMesh.parentSubMeshIndex = parentIndex;
+
+		rawMesh->subMeshes.push_back(subMesh);
+	}
+}
+
+void ProcessNodeTree(aiNode* node, ModelAsset& model, Mesh* rawMesh, const aiScene* scene, uint64_t& totalVertexCount, uint64_t& totalIndexCount, const std::string& filepath) {
+	//ProcessNode(model, rawMesh, scene, node, totalVertexCount, totalIndexCount, filepath);
+
+	for (size_t i = 0; i < node->mNumChildren; i++) {
+		ProcessNode(model, rawMesh, -1, scene, node->mChildren[i], totalVertexCount, totalIndexCount, filepath);
+		ProcessNodeTree(node->mChildren[i], model, rawMesh, scene, totalVertexCount, totalIndexCount, filepath);
+	}
 }
 
 bool ModelLoader::Load(ModelAsset& model, const std::string& filepath) {
@@ -199,198 +401,22 @@ bool ModelLoader::Load(ModelAsset& model, const std::string& filepath) {
 	uint64_t totalVertexCount = 0;
 	uint64_t totalIndexCount = 0;
 
-	MeshCPU* rawMesh = new MeshCPU();
+	Mesh* rawMesh = new Mesh();
 
-	for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
-		// Node Processing
-		aiNode* node = scene->mRootNode->mChildren[i];
-		//std::string name = node->mName.C_Str();
+	ProcessNodeTree(scene->mRootNode, model, rawMesh, scene, totalVertexCount, totalIndexCount, filepath);
 
-		localTransform = node->mTransformation;
-		localTransform.Decompose(scaling, rotation, position);
+	//ProcessNode(model, rawMesh, scene, scene->mRootNode, totalVertexCount, totalIndexCount, filepath);
 
-		// Mesh Processing
-		for (unsigned int y = 0; y < node->mNumMeshes; y++) {
-			aiMesh* mesh = scene->mMeshes[node->mMeshes[y]];
-
-			SubMesh subMesh{};
-
-			subMesh.localModel = DirectX::XMMatrixScaling(scaling.x, scaling.y, scaling.z) *
-				DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(rotation.x, rotation.y, rotation.z, rotation.w)) *
-				DirectX::XMMatrixTranslation(position.x, position.y, position.z);
-
-			subMesh.vertexOffset = totalVertexCount;
-			subMesh.indexOffset = totalIndexCount;
-
-			for (unsigned int z = 0; z < mesh->mNumVertices; z++)
-			{
-				Vertex vertex;
-
-				aiVector3D position = mesh->mVertices[z];
-				vertex.position = { position.x, position.y, position.z };
-				// Store vertex.x, vertex.y, vertex.z
-
-				// Normals
-				if (mesh->HasNormals()) // Check if normals exist
-				{
-					aiVector3D normal = mesh->mNormals[z];
-					vertex.normal = { normal.x, normal.y, normal.z };
-					// Store normal.x, normal.y, normal.z
-				}
-
-				// UV Coordinates (Texture Coordinates) - Assimp supports multiple UV channels (up to 4)
-				if (mesh->HasTextureCoords(0)) // Check for the first UV channel
-				{
-					aiVector3D uv = mesh->mTextureCoords[0][z];
-					vertex.uv = { uv.x, uv.y };
-					// Store uv.x, uv.y. The z component can be ignored for 2D textures.
-				}
-
-				if (mesh->HasTangentsAndBitangents()) {
-					aiVector3D tangent = mesh->mTangents[z];
-					vertex.tangent = { tangent.x, tangent.y, tangent.z };
-				}
-
-				rawMesh->vertices.push_back(vertex);
-
-				totalVertexCount++;
-			}
-
-			for (unsigned int z = 0; z < mesh->mNumFaces; z++)
-			{
-				const aiFace& face = mesh->mFaces[z];
-
-				for (unsigned int j = 0; j < face.mNumIndices; j++)
-				{
-					rawMesh->indices.push_back(face.mIndices[j]);
-					totalIndexCount++;
-				}
-			}
-
-			subMesh.vertexCount = totalVertexCount - subMesh.vertexOffset;
-			subMesh.indexCount = totalIndexCount - subMesh.indexOffset;
-
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			bool isMaterialLoaded = true;
-
-			for (auto& mat : model.materials) {
-				if (mat.name == material->GetName().C_Str()) {
-					isMaterialLoaded = false;
-					mat.subMeshIndices.push_back(rawMesh->subMeshes.size());
-					break;
-				}
-			}
-
-			if (isMaterialLoaded) {
-				ModelAsset::Material mat;
-				mat.name = material->GetName().C_Str();
-				mat.subMeshIndices.push_back(rawMesh->subMeshes.size());
-				
-
-				aiColor4D baseColor(1.0f, 1.0f, 1.0f, 1.0f);
-				aiString aplhaMode;
-				float roughness = 0;
-				float metallic = 0;
-				float opacity = 1;
-				float aplhaCutoff = 0.5f;
-
-				material->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor);
-				material->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness);
-				material->Get(AI_MATKEY_METALLIC_FACTOR, metallic);
-				material->Get(AI_MATKEY_OPACITY, opacity);
-				material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, aplhaCutoff);
-
-				mat.renderMode = ModelAsset::Material::RenderMode::Opaque;
-
-				if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, aplhaMode) == aiReturn_SUCCESS) {
-					if (aplhaMode == aiString("MASK")) {
-						mat.renderMode = ModelAsset::Material::RenderMode::AplhaTest;
-					}
-					else if (aplhaMode == aiString("BLEND")) {
-						mat.renderMode = ModelAsset::Material::RenderMode::AplhaTest;
-					}
-				}
-
-				mat.baseColor = vec4(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
-				mat.aplhaCutoff = aplhaCutoff;
-
-				auto containsTextureWithName = [&](std::string name) {
-					if (model.textures.contains(name)) return true;
-					return false;
-				};
-				auto addTextureIfDoesntExistOtherwiseDelete = [&](TextureCPU* texture) {
-					std::string name = texture->name;
-					if (!model.textures.contains(texture->name)) model.textures[texture->name] = texture;
-					else {
-						delete texture;
-					}
-					return name;
-				};
-
-				TextureCPU* albedo = nullptr;
-				if (LoadTextureFromAiScene(&albedo, aiTextureType_DIFFUSE, 0, material, scene, filepath)) {
-					mat.albedoTextureName = addTextureIfDoesntExistOtherwiseDelete(albedo);
-					albedo->filterMode = TextureCPU::Linear;
-				}
-				TextureCPU* normal = nullptr;
-				if (LoadTextureFromAiScene(&normal, aiTextureType_NORMALS, 0, material, scene, filepath)) {
-					normal->filterMode = TextureCPU::FilterMode::Linear;
-					mat.normalTextureName = addTextureIfDoesntExistOtherwiseDelete(normal);
-				}
-
-				TextureCPU* packedORM = nullptr;
-				LoadTextureFromAiScene(&packedORM, aiTextureType_UNKNOWN, 0, material, scene, filepath);
-
-				if (packedORM) {
-					// // Combined Textures RM Format
-					mat.roughnessFactor = 1;
-					mat.metallicFactor = 1;
-
-					mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(packedORM);
-				}
-				else {
-					TextureCPU* rough = nullptr;
-					TextureCPU* metal = nullptr;
-
-					LoadTextureFromAiScene(&metal, aiTextureType_METALNESS, 0, material, scene, filepath);
-					LoadTextureFromAiScene(&rough, aiTextureType_DIFFUSE_ROUGHNESS, 0, material, scene, filepath);
-
-					if (rough && metal) {
-						mat.roughnessFactor = 1;
-						mat.metallicFactor = 1;
-
-						if (rough->name == metal->name) {
-							mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(rough);
-						}
-						else {
-							mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(PackTextureRM(rough, metal));
-						}
-					}
-					else if (rough || metal) {
-						TextureCPU* orm = rough ? rough : metal;
-						mat.rmTextureName = addTextureIfDoesntExistOtherwiseDelete(packedORM);
-
-						TextureCPU* textureToDelete = (!rough) ? rough : metal;
-						delete textureToDelete;
-					}
-					else {
-						mat.roughnessFactor = roughness;
-						mat.metallicFactor = metallic;
-					}
-				}
-
-				if (!mat.rmTextureName.empty()) {
-					model.textures[mat.rmTextureName]->filterMode = TextureCPU::FilterMode::Point;
-				}
-
-				model.materials.push_back(mat);
-			}
-
-			subMesh.name = node->mName.C_Str();
-
-			rawMesh->subMeshes.push_back(subMesh);
-		}
-	}
+	//for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
+	//	// Node Processing
+	//	aiNode* node = scene->mRootNode->mChildren[i];
+	//	//std::string name = node->mName.C_Str();
+	//
+	//	// Node Processing
+	//	ProcessNode(model, rawMesh, scene, node, totalVertexCount, totalIndexCount, filepath);
+	//
+	//	SubMesh& submesh = rawMesh->subMeshes.back();
+	//}
 
 	model.mesh = rawMesh;
 

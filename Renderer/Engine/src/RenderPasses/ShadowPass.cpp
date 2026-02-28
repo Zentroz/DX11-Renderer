@@ -5,39 +5,44 @@
 using namespace zRender;
 
 ShadowPass::ShadowPass(const InitData& i) 
-	: depthSV(i.depthSV), pipeline(i.pipeline), objectBufferHandle(i.objectBufferHandle), frameBufferHandle(i.frameBufferHandle)
+	: depthSV(i.depthSV), pipeline(i.pipeline), objectBufferHandle(i.objectBufferHandle), lightBufferHandle(i.lightBufferHandle), debugRT(i.debugRT)
 {}
 
 RenderPassDesc ShadowPass::GetDesc() const {
 	return {
 		"ShadowPass",
 		{},
-		{ { 0, depthSV, RenderPassResource::DSV, RenderPassResource::PS } },
+		{ { 0, debugRT, RenderPassResource::RTV, RenderPassResource::PS }, { 0, depthSV, RenderPassResource::DSV, RenderPassResource::PS } },
 		true
 	};
 }
 void ShadowPass::Execute(const RenderPassContext& ctx) {
-	FrameData fData;
-	ObjectData oData;
+	float debugColor[4] = {0, 0, 0, 1};
 
-	Camera cam = ctx.renderCamera;
-	cam.forward = vec3(0.25, 0.5f, -0.25f) * -1;
-	cam.position = vec3(0.25, 0.5f, -0.25f) * 10;
-	cam.renderMode = Camera::Orthographic;
-
-	fData.vpMatrix = cam.ViewProjMatrix();
-	ctx.ctx->UpdateBuffer(frameBufferHandle, sizeof(FrameData), &fData);
-	ctx.ctx->BindBufferVS(1, frameBufferHandle);
-
+	ctx.ctx->SetViewport(4096, 4096);
+	ctx.ctx->ClearRenderTarget(debugRT, debugColor);
 	ctx.ctx->ClearDepthStencil(depthSV);
+
+	ObjectData oData{};
+
+	Light& light = ctx.lights[0];
+
+	LightBuffer lightData{};
+	lightData.light[0] = light;
+
+	lightData.light[0].VPMatrix = DirectX::XMMatrixTranspose(light.VPMatrix);
+
+	ctx.ctx->UpdateBuffer(lightBufferHandle, sizeof(LightBuffer), &lightData);
+	ctx.ctx->BindBufferVS(3, lightBufferHandle);
+
 	ctx.ctx->BindPipeline(pipeline);
 
-	for (auto& item : ctx.renderItemsOpaque) {
-		oData.modelMatrix = item.modelMatrix;
-
+	for (auto& item : *ctx.renderItemsOpaque) {
+		oData.modelMatrix = DirectX::XMMatrixTranspose(item.modelMatrix);
+	
 		ctx.ctx->UpdateBuffer(objectBufferHandle, sizeof(ObjectData), &oData);
 		ctx.ctx->BindBufferVS(2, objectBufferHandle);
-
-		//ctx.ctx->DrawGeometryIndexed(item.meshHandle);
+	
+		ctx.ctx->DrawGeometryIndexed(item.meshHandle, item.subMeshIndex);
 	}
 }

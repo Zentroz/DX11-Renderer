@@ -3,7 +3,7 @@
 #include<iostream>
 #include<unordered_map>
 #include<Renderer/Core/Handles.h>
-#include<Renderer/Core/ResourcesCPU.h>
+#include<Renderer/Core/Resources.h>
 
 #include"Utility/AssetLoader.h"
 
@@ -45,6 +45,9 @@ public:
 	template<typename T>
 	Handle Add(std::shared_ptr<T> asset);
 
+	//Handle AddMesh(const Mesh& mesh);
+	//Mesh* GetMesh(Handle handle);
+
 	Handle AddModel(Model& model);
 	Model GetModel(Handle handle);
 
@@ -53,7 +56,7 @@ public:
 	std::vector<Material*> GetAllMaterials();
 
 private:
-	std::unordered_map<Handle, std::shared_ptr<zRender::ResourceCPU>> m_Assets;
+	std::unordered_map<Handle, std::shared_ptr<zRender::Resource>> m_Assets;
 	std::unordered_map<Handle, Material> m_Materials;
 	std::unordered_map<Handle, Model> m_Models;
 	Handle m_MaterialCount;
@@ -72,7 +75,7 @@ template<typename T>
 Handle AssetManager::Add(std::shared_ptr<T> asset) {
 	Handle h = uuid::Build();
 
-	m_Assets[h] = static_cast<std::shared_ptr<zRender::ResourceCPU>>(asset);
+	m_Assets[h] = static_cast<std::shared_ptr<zRender::Resource>>(asset);
 
 	return h;
 }

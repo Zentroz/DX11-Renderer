@@ -12,6 +12,10 @@ namespace zRender {
 	void Renderer::SetCamera(Camera& cam) {
 		renderCamera = cam;
 	}
+	void Renderer::SetScreenSize(int width, int height) {
+		this->width = width;
+		this->height = height;
+	}
 
 	void Renderer::Shutdown() {}
 
@@ -20,7 +24,16 @@ namespace zRender {
 	}
 
 	void Renderer::Render() {
-		RenderPassContext ctx(m_RenderContext, renderCamera, m_RenderQueueOpaque, m_RenderQueueAplhaTest, m_RenderQueueTransparent, m_Lights, lightCount);
+		RenderPassContext ctx{
+			.ctx = m_RenderContext,
+			.renderCamera = &renderCamera,
+			.lights = m_Lights,
+			.lightCount = lightCount,
+			.renderItemsOpaque = &m_RenderQueueOpaque,
+			.renderItemsAplhaTest = &m_RenderQueueAplhaTest,
+			.renderItemsTransparent = &m_RenderQueueTransparent
+		};
+
 		renderGraph.Execute(ctx);
 	}
 	void Renderer::EndRender() {
@@ -30,14 +43,11 @@ namespace zRender {
 	}
 
 	void Renderer::Queue(RenderItem item) {
-		switch (item.materialData.renderMode) {
-		case RenderItem::Material::Opaque:
+		switch (item.materialData.surfaceType) {
+		case Opaque:
 			m_RenderQueueOpaque.push_back(item);
 			break;
-		case RenderItem::Material::AplhaTest:
-			m_RenderQueueAplhaTest.push_back(item);
-			break;
-		case RenderItem::Material::Transparent:
+		case Transparent:
 			m_RenderQueueTransparent.push_back(item);
 			break;
 		}

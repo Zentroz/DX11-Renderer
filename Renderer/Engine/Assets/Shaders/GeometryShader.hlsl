@@ -45,15 +45,6 @@ VSOutput VSMain(VSInput input)
     return o;
 }
 
-bool IsColorZero(float3 color)
-{
-    return (color.x == 0 && color.y == 0 && color.z == 0);
-}
-bool IsColorZero(float4 color)
-{
-    return (color.x == 0 && color.y == 0 && color.z == 0 && color.w == 0);
-}
-
 Texture2D diffuseTex : register(t0);
 SamplerState diffSampler : register(s0);
 
@@ -85,34 +76,34 @@ GBufferOut PSMain(VSOutput input)
 	float4 normalSample = normalMap.Sample(normalSampler, input.uv);
 
 	// Properties
-	float3 diffuse = diffuseColor;
-	float3 normalWS = normalize(input.normalWS);
+	float3 diffuse = diffuseColor.rgb * diffuseSample.rgb;
 	float ao = 1;
     
-	if (!IsColorZero(diffuseSample))
-		diffuse = diffuse * diffuseSample.rgb;
-	if (!IsColorZero(normalSample))
-	{
-		float3 normalTS = normalSample.xyz * 2.0f - 1.0f;
 
-	    // TBN
-		float3 N = normalWS;
-		float3 T = normalize(input.tangentWS);
-		T = normalize(T - dot(T, N) * N);
-		float3 B = cross(N, T);
+    // Normal Mapping
+	normalSample = float4(0.5, 0.5, 1.0, 0.0);
+	
+	float3 normalTS = normalSample.xyz * 2.0f - 1.0f;
+	float3 normalWS = input.normalWS;
+    
+    // TBN
+	float3 N = normalWS;
+	float3 T = normalize(input.tangentWS);
+	T = normalize(T - dot(T, N) * N);
+	float3 B = cross(N, T);
 
-		float3x3 TBN = float3x3(T, B, N);
+	float3x3 TBN = float3x3(T, B, N);
 
-        // Transform to world space
-		normalWS = normalize(mul(normalTS, TBN));
-	}
+    // Transform to world space
+	normalWS = normalize(mul(normalTS, TBN));
     
     //float3 encodedNormals = normalWS * 0.5f + 0.5f;
     
+    // Writing G-Buffers
 	o.albedo = float4(GammaCorrection(diffuse, 1.1), 1);
 	o.normal = float4(normalWS, 1);
 	float4 material = ormMap.Sample(ormSampler, input.uv);
-	material.r = 0;
+	material.r = 1;
 	material.g = material.g * roughnessMultiplier;
 	material.b = material.b * metallicMultipler;
 

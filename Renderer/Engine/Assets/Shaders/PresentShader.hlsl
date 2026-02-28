@@ -45,24 +45,23 @@ float Linear01Depth(float depth, float nearPlane, float farPlane)
 
 float4 PSMain(float4 pos : SV_Position) : SV_Target
 {
-    float2 ScreenSize = float2(1536, 793);
+	float2 ScreenSize = float2(timeAndScreen.z, timeAndScreen.w);
     float2 uv = pos.xy / ScreenSize;
-    // float2 uv = pos.xy / ScreenSize;
     float4 output = 0;
     
 	float nearPlane = 0.01;
 	float farPlane = 100.0;
     
 	float depth = depthTex.Sample(samp4, uv).r;
-
-	if (Linear01Depth(depth, nearPlane, farPlane)  >= 0.999)
+    
+	if (Linear01Depth(depth, nearPlane, farPlane) >= 0.999)
 	{
 		return backgroundTex.Sample(samp5, uv);
 	}
-
+    
     if (outputTextureIndex == 0) {
         output = outputTex.Sample(samp, uv);
-    }
+	}
     else if (outputTextureIndex == 1) {
         output = albedoTex.Sample(samp1, uv);
     }
@@ -71,7 +70,7 @@ float4 PSMain(float4 pos : SV_Position) : SV_Target
     }
     else if (outputTextureIndex == 3) {
         output = materialTex.Sample(samp3, uv);
-    }
+	}
     else {
 		output = DepthToScreenColor(depth, nearPlane, farPlane);
 	}

@@ -21,6 +21,7 @@ namespace zRender {
 
 		void Setup(IRenderContext* renderContext, IRenderResourceProvider* resourceProvider);
 		void SetCamera(Camera& cam);
+		void SetScreenSize(int width, int height);
 		void AddLight(Light light);
 
 		void AddRenderPass(IRenderPass* pass);
@@ -44,5 +45,7 @@ namespace zRender {
 		Camera renderCamera;
 		Light m_Lights[8];
 		int lightCount;
+
+		int width, height;
 	};
 }

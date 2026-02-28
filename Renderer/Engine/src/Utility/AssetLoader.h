@@ -3,7 +3,7 @@
 #include<string>
 #include<unordered_map>
 #include<Renderer/Core/Handles.h>
-#include<Renderer/Core/ResourcesCPU.h>
+#include<Renderer/Core/Resources.h>
 
 class AssetLoader {
 public:
@@ -13,26 +13,26 @@ public:
 class MeshLoader {
 public:
 	MeshLoader() = default;
-	bool Load(zRender::MeshCPU& mesh, const std::string& path);
+	bool Load(zRender::Mesh& mesh, const std::string& path);
 };
 
 class TextureLoader {
 public:
 	TextureLoader() = default;
 	void FlipImage(bool flip = true);
-	bool Load(zRender::TextureCPU& texture, const std::string& path);
+	bool Load(zRender::Texture& texture, const std::string& path);
 };
 
 class ShaderLoader {
 public:
 	ShaderLoader() = default;
-	bool Load(zRender::ShaderCPU& shader, const std::string& path);
+	bool Load(zRender::Shader& shader, const std::string& path);
 };
 
 struct ModelAsset {
 	std::string name;
 
-	zRender::MeshCPU* mesh = nullptr;
+	zRender::Mesh* mesh = nullptr;
 
 	struct LoadedTexture {
 		enum TextureType {
@@ -43,7 +43,7 @@ struct ModelAsset {
 		
 	};
 
-	std::unordered_map<std::string, zRender::TextureCPU*> textures;
+	std::unordered_map<std::string, zRender::Texture*> textures;
 
 	struct Material {
 		std::string name;

@@ -1,115 +1,162 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Editor">
-      <UniqueIdentifier>{8C1A20B0-78BC-4A86-6177-5EDA4DB8D1D6}</UniqueIdentifier>
+    <Filter Include="externals">
+      <UniqueIdentifier>{9B5E5A7B-07C9-0EF2-5007-C097BCB0EC46}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine">
-      <UniqueIdentifier>{DBC7D3B0-C769-FE86-B024-12DB9C6585D7}</UniqueIdentifier>
+    <Filter Include="externals\entt">
+      <UniqueIdentifier>{C57CA055-B14A-945B-9ADE-0482864B70C0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="RenderPasses">
-      <UniqueIdentifier>{F4BC7120-E01F-01C5-89A5-397B75E7CC47}</UniqueIdentifier>
+    <Filter Include="externals\entt\include">
+      <UniqueIdentifier>{3899ACDA-2493-D52C-0D00-6C3DF9983B99}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Utility">
-      <UniqueIdentifier>{594615A9-C525-9444-CE3D-1F1B3A9CFAA5}</UniqueIdentifier>
+    <Filter Include="externals\entt\include\entt">
+      <UniqueIdentifier>{82E1A0D1-EEEE-CEB7-77D5-CAA2E3E19A6E}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Window">
-      <UniqueIdentifier>{3DEA79DA-298C-A4B0-1247-B804FE872B01}</UniqueIdentifier>
+    <Filter Include="externals\stb">
+      <UniqueIdentifier>{73F26948-DFB2-E57E-A8ED-2EFC146D2A5B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="externals\stb\stb_image">
+      <UniqueIdentifier>{CD8E60A8-39C6-A83F-42D0-0C63AE86CF38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Editor">
+      <UniqueIdentifier>{C3F37E0D-AFAB-C05A-18B3-99B6048A5B4B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Engine">
+      <UniqueIdentifier>{12A1320E-FE58-745B-6760-4DB753370F4C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\RenderPasses">
+      <UniqueIdentifier>{6B639233-575C-B185-808E-960A6CE69091}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Utility">
+      <UniqueIdentifier>{70464FB2-DCFB-C7A7-65F0-C17ED1A4BEAB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Window">
+      <UniqueIdentifier>{74C3D837-607B-1A85-C982-F3E0B559B575}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="externals\entt\include\entt\entt.hpp">
+      <Filter>externals\entt\include\entt</Filter>
+    </ClInclude>
+    <ClInclude Include="externals\stb\stb_image\stb_image.h">
+      <Filter>externals\stb\stb_image</Filter>
+    </ClInclude>
     <ClInclude Include="src\Editor\ObjectPanel.h">
-      <Filter>Editor</Filter>
+      <Filter>src\Editor</Filter>
     </ClInclude>
     <ClInclude Include="src\Editor\UI.h">
-      <Filter>Editor</Filter>
+      <Filter>src\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine.h">
+      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\AssetManager.h">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\MaterialManager.h">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Scene.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="src\RenderPasses\GBufferDebugPass.h">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\RenderPasses\GBufferPass.h">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\RenderPasses</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RenderPasses\GradiantPass.h">
+      <Filter>src\RenderPasses</Filter>
     </ClInclude>
     <ClInclude Include="src\RenderPasses\LightingPass.h">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\RenderPasses</Filter>
     </ClInclude>
     <ClInclude Include="src\RenderPasses\PresentPass.h">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\RenderPasses</Filter>
     </ClInclude>
     <ClInclude Include="src\RenderPasses\ShadowPass.h">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\RenderPasses</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RenderPasses\TransparentPass.h">
+      <Filter>src\RenderPasses</Filter>
     </ClInclude>
     <ClInclude Include="src\Utility\AssetLoader.h">
-      <Filter>Utility</Filter>
+      <Filter>src\Utility</Filter>
     </ClInclude>
     <ClInclude Include="src\Utility\FreelookCamera.h">
-      <Filter>Utility</Filter>
+      <Filter>src\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Physics\Intersection.h">
+      <Filter>src\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utility\TexturePacker.h">
+      <Filter>src\Utility</Filter>
     </ClInclude>
     <ClInclude Include="src\Window\ChiliWin.h">
-      <Filter>Window</Filter>
+      <Filter>src\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Window\Window.h">
-      <Filter>Window</Filter>
+      <Filter>src\Window</Filter>
     </ClInclude>
-    <ClInclude Include="externals\stb\stb_image\stb_image.h" />
-    <ClInclude Include="src\RenderPasses\GradiantPass.h" />
-    <ClInclude Include="src\Utility\TexturePacker.h" />
-    <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\RenderPasses\TransparentPass.h" />
+    <ClInclude Include="src\Engine\Components.h" />
+    <ClInclude Include="src\RenderPasses\PostProcessingPass.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="externals\stb\stb_image\stb_image.cpp">
+      <Filter>externals\stb\stb_image</Filter>
+    </ClCompile>
     <ClCompile Include="src\Editor\ObjectPanel.cpp">
-      <Filter>Editor</Filter>
+      <Filter>src\Editor</Filter>
     </ClCompile>
     <ClCompile Include="src\Editor\UI.cpp">
-      <Filter>Editor</Filter>
+      <Filter>src\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine.cpp">
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\AssetManager.cpp">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\MaterialManager.cpp">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Scene.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="src\RenderPasses\GBufferDebugPass.cpp">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\Engine</Filter>
     </ClCompile>
     <ClCompile Include="src\RenderPasses\GBufferPass.cpp">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\RenderPasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RenderPasses\GradiantPass.cpp">
+      <Filter>src\RenderPasses</Filter>
     </ClCompile>
     <ClCompile Include="src\RenderPasses\LightingPass.cpp">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\RenderPasses</Filter>
     </ClCompile>
     <ClCompile Include="src\RenderPasses\PresentPass.cpp">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\RenderPasses</Filter>
     </ClCompile>
     <ClCompile Include="src\RenderPasses\ShadowPass.cpp">
-      <Filter>RenderPasses</Filter>
+      <Filter>src\RenderPasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RenderPasses\TransparentPass.cpp">
+      <Filter>src\RenderPasses</Filter>
     </ClCompile>
     <ClCompile Include="src\Utility\AssetLoader.cpp">
-      <Filter>Utility</Filter>
+      <Filter>src\Utility</Filter>
     </ClCompile>
     <ClCompile Include="src\Utility\FreeLookCamera.cpp">
-      <Filter>Utility</Filter>
+      <Filter>src\Utility</Filter>
     </ClCompile>
-    <ClCompile Include="src\WinMain.cpp" />
+    <ClCompile Include="src\Physics\Intersection.cpp">
+      <Filter>src\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="src\WinMain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\Window\Window.cpp">
-      <Filter>Window</Filter>
+      <Filter>src\Window</Filter>
     </ClCompile>
-    <ClCompile Include="externals\stb\stb_image\stb_image.cpp" />
-    <ClCompile Include="src\RenderPasses\GradiantPass.cpp" />
-    <ClCompile Include="src\Engine.cpp" />
-    <ClCompile Include="src\RenderPasses\TransparentPass.cpp" />
+    <ClCompile Include="src\RenderPasses\PostProcessingPass.cpp" />
   </ItemGroup>
 </Project>

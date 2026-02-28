@@ -4,6 +4,7 @@
 #include<DirectXMath.h>
 #include<Renderer/Render/RenderItem.h>
 #include<Renderer/D3D11/ResourceProvider.h>
+#include<entt/entt.hpp>
 
 #include"Engine/MaterialManager.h"
 #include"Engine/AssetManager.h"
@@ -22,14 +23,15 @@ class Scene {
 public:
 	Scene() = default;
 
-	void AddEntity(Entity& entity);
-	bool FindEntity(std::string name, Entity& entity);
-
+	entt::registry& GetRegistry() { return registry; }
 	AssetManager& GetAssetManager() { return assetManager; }
 
 	std::vector<zRender::RenderItem> GenerateDrawCalls();
 
 private:
-	std::vector<Entity> m_Entities;
+	entt::registry registry{};
 	AssetManager assetManager;
+
+private:
+	DirectX::XMMATRIX CalculateGlobalModelMatrix(entt::entity entity);
 };
