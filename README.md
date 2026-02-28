@@ -1,7 +1,8 @@
 # Overview
 A small real-time renderer built using DirectX 11 to explore and implement modern rendering techniques such as deferred rendering, lighting models, and GPU resource management.
 
-<img width="1918" height="940" alt="renderer-1" src="https://github.com/user-attachments/assets/77cadefa-507e-49d9-9fb6-dbf9bb983299" />
+<img width="1836" height="972" alt="image" src="https://github.com/user-attachments/assets/89e6c68f-2bb9-432e-9240-06f97606500b" />
+
 
 ## Features
 ### In-Progress
