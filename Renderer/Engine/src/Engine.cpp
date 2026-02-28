@@ -22,7 +22,8 @@ void Engine::Init(const EngineInitData& initData) {
 
 	Camera cam{};
 	cam.up = vec3(0, 1, 0);
-	cam.forward = normalize(vec3(0, -2, -1));
+	cam.forward = normalize(vec3(0, -1, -0.01f));
+	//cam.forward = normalize(vec3(0, -2, -1));
 	cam.position = vec3(0, 0, 0) - cam.forward * 50;
 	cam.width = 4096;
 	cam.height = 4096;
