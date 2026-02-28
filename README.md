@@ -29,7 +29,7 @@ A small real-time renderer built using DirectX 11 to explore and implement moder
 <img width="3836" height="1886" alt="renderer-gbuffers" src="https://github.com/user-attachments/assets/ebc9f7c0-062b-4823-a8b8-a30113a5246b" />
 
 ## Aplha Clipping / Blending
-<img width="1422" height="950" alt="renderer-aplha" src="https://github.com/user-attachments/assets/7c4bdf2e-7fe6-49d5-ab7b-4604d976ba1c" />
+<img width="1280" height="720" alt="renderer-aplha" src="media/AplhaClipping-SS.png" />
 
 ## Technical Overview
 The engine initializes DirectX 11 device, and swap chain. Also resource provider and render context which are provided to renderer.
