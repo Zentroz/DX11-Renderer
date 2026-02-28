@@ -35,7 +35,7 @@ void Engine::Init(const EngineInitData& initData) {
 			.type = { 0, 0, 0, 0 },
 			.position = vec4(cam.position.x, cam.position.y, cam.position.z, 1),
 			.direction = vec4(cam.forward.x, cam.forward.y, cam.forward.z, 1),
-			.lightColor = vec4(1, 1, 1, 1),
+			.lightColor = vec4(0.77, 0.92, 0.85, 1),
 			.lightProp = vec4(1, 0, 0, 0),
 			.VPMatrix = lightVP,
 			.invVPMatrix = DirectX::XMMatrixInverse(nullptr, lightVP)
@@ -53,7 +53,7 @@ void Engine::Init(const EngineInitData& initData) {
 	renderContext->SetScreenSize(initData.width, initData.height);
 	renderer.SetScreenSize(initData.width, initData.height);
 
-	OpenModelFile("Assets/others/shadow_test.fbx");
+	OpenModelFile("Assets/Mesh/sponza/scene.gltf");
 }
 
 void Engine::CleanUp() {

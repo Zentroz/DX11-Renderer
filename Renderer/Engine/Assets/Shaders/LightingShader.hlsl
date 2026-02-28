@@ -146,7 +146,7 @@ float4 PSMain(float4 pos : SV_Position) : SV_Target
 			lightIntensity *= shadow;
 		}
 		
-		Lo += CookTorranceBRDF(albedoSample.xyz, metallic, roughness, N, V, L, lightIntensity, mainLightColor.rgb);
+		Lo += CookTorranceBRDF(albedoSample.xyz, metallic, roughness, N, V, L, lightIntensity, lights[i].lightColor.rgb);
 	}
 
 	float3 ambient = 0.03 * albedoSample.xyz;
