@@ -1,8 +1,6 @@
 #include"Engine/Scene.h"
 #include"Engine/Components.h"
 
-
-
 std::vector<zRender::RenderItem> Scene::GenerateDrawCalls() {
 	std::vector<zRender::RenderItem> drawCalls;
 	
@@ -14,7 +12,10 @@ std::vector<zRender::RenderItem> Scene::GenerateDrawCalls() {
 			auto& item = drawCalls.back();
 
 			// Mesh
-			item.subMeshIndex = mf.subMeshIndex;
+			//item.subMeshIndex = mf.subMeshIndex;
+			item.baseVertexLocation = mf.vertexOffset;
+			item.baseIndexLocation = mf.indexOffset;
+			item.indexCount = mf.indexCount;
 			item.meshHandle = mf.mesh;
 			item.modelMatrix = CalculateGlobalModelMatrix(e);
 			item.flags = 0;

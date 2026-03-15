@@ -31,11 +31,9 @@ Texture2D normalTex : register(t1);
 Texture2D materialTex : register(t2);
 Texture2D depthTex : register(t3);
 Texture2D shadowDepthTex : register(t4);
-SamplerState samp : register(s0);
-SamplerState samp1 : register(s1);
-SamplerState samp2 : register(s2);
-SamplerState samp3 : register(s3);
-SamplerState samp4 : register(s4);
+
+SamplerState linearSampler : register(s0);
+SamplerState pointSampler : register(s1);
 
 float LinearizeDepth(float z, float near, float far)
 {
@@ -82,10 +80,10 @@ float4 PSMain(float4 pos : SV_Position) : SV_Target
 	float2 uv = pos.xy / ScreenSize;
     
 	// G-Buffers sampling
-	float4 albedoSample = albedoTex.Sample(samp, uv);
-	float4 normalSample = normalTex.Sample(samp1, uv);
-	float4 materialSample = materialTex.Sample(samp2, uv);
-	float depth = depthTex.Sample(samp3, uv).r;
+	float4 albedoSample = albedoTex.Sample(linearSampler, uv);
+	float4 normalSample = normalTex.Sample(pointSampler, uv);
+	float4 materialSample = materialTex.Sample(pointSampler, uv);
+	float depth = depthTex.Sample(pointSampler, uv).r;
     
 	// ORM Texture properties
 	float ao = materialSample.r;
@@ -102,7 +100,7 @@ float4 PSMain(float4 pos : SV_Position) : SV_Target
 	projCoords.xy = projCoords.xy * 0.5f + 0.5f;
 	projCoords.y = 1.0f - projCoords.y;
     
-	float shadowDepth = shadowDepthTex.Sample(samp4, projCoords.xy).r;
+	float shadowDepth = shadowDepthTex.Sample(pointSampler, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 	float bias = shadowBias.x;
 	float shadow = (currentDepth - bias) > shadowDepth ? 0.0 : 1.0;
@@ -125,7 +123,7 @@ float4 PSMain(float4 pos : SV_Position) : SV_Target
 		for (int y = -range; y <= range; ++y)
 		{
 			float2 offset = float2(x, y) * texelSize;
-			float depthSample = shadowDepthTex.Sample(samp4, projCoords.xy + offset).r;
+			float depthSample = shadowDepthTex.Sample(pointSampler, projCoords.xy + offset).r;
 			shadow += (currentDepth - bias) > depthSample ? 0.0 : 1.0;
 		}
 	}

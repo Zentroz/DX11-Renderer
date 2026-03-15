@@ -82,24 +82,25 @@ namespace zRender {
         m_Context->Release();
     }
 
-    ID3D11RenderTargetView* D3D11Device::CreateRenderTarget() {
-        ID3D11RenderTargetView* rtv = nullptr;
+    IRenderResourceProvider* D3D11Device::CreateResourceProvider() {
+        D3D11ResourceProvider* resProvider = new D3D11ResourceProvider(m_Device.Get(), GetBackBufferTexture());
 
-        ID3D11Texture2D* pBackBuffer = nullptr;
+        return static_cast<IRenderResourceProvider*>(resProvider);
+    }
+    ICommandContext* D3D11Device::CreateCommandContext() {
+        D3D11CommandContext* commandContext = new D3D11CommandContext(m_Context);
 
-        HRESULT hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
-
-        if (pBackBuffer != 0) {
-            m_Device->CreateRenderTargetView(pBackBuffer, nullptr, &rtv);
-            pBackBuffer->Release();
-        }
-
-        return rtv;
+        return static_cast<ICommandContext*>(commandContext);
     }
 
     ID3D11Texture2D* D3D11Device::GetBackBufferTexture() {
         ID3D11Texture2D* pBackBuffer = nullptr;
         HRESULT hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
         return pBackBuffer;
+    }
+
+    void D3D11Device::EndFrame() {
+        m_SwapChain->Present(1, 0);
+        m_Context->OMSetRenderTargets(0, nullptr, nullptr);
     }
 }

@@ -5,7 +5,7 @@
 using namespace zRender;
 
 ShadowPass::ShadowPass(const InitData& i) 
-	: depthSV(i.depthSV), pipeline(i.pipeline), objectBufferHandle(i.objectBufferHandle), lightBufferHandle(i.lightBufferHandle), debugRT(i.debugRT)
+	: depthSV(i.depthSV), pipelineHandle(i.pipelineHandle), objectBufferHandle(i.objectBufferHandle), lightBufferHandle(i.lightBufferHandle), debugRT(i.debugRT)
 {}
 
 RenderPassDesc ShadowPass::GetDesc() const {
@@ -19,9 +19,9 @@ RenderPassDesc ShadowPass::GetDesc() const {
 void ShadowPass::Execute(const RenderPassContext& ctx) {
 	float debugColor[4] = {0, 0, 0, 1};
 
-	ctx.ctx->SetViewport(4096, 4096);
-	ctx.ctx->ClearRenderTarget(debugRT, debugColor);
-	ctx.ctx->ClearDepthStencil(depthSV);
+	ctx.cmdCtx->SetViewport(4096, 4096);
+	ctx.cmdCtx->ClearRTV(debugRT, debugColor);
+	ctx.cmdCtx->ClearDSV(depthSV);
 
 	ObjectData oData{};
 
@@ -32,17 +32,17 @@ void ShadowPass::Execute(const RenderPassContext& ctx) {
 
 	lightData.light[0].VPMatrix = DirectX::XMMatrixTranspose(light.VPMatrix);
 
-	ctx.ctx->UpdateBuffer(lightBufferHandle, sizeof(LightBuffer), &lightData);
-	ctx.ctx->BindBufferVS(3, lightBufferHandle);
+	ctx.cmdCtx->UpdateBuffer(lightBufferHandle, sizeof(LightBuffer), &lightData);
+	ctx.cmdCtx->SetBufferVS(lightBufferHandle, 3);
 
-	ctx.ctx->BindPipeline(pipeline);
+	ctx.cmdCtx->SetPipeline(pipelineHandle);
 
 	for (auto& item : *ctx.renderItemsOpaque) {
 		oData.modelMatrix = DirectX::XMMatrixTranspose(item.modelMatrix);
 	
-		ctx.ctx->UpdateBuffer(objectBufferHandle, sizeof(ObjectData), &oData);
-		ctx.ctx->BindBufferVS(2, objectBufferHandle);
+		ctx.cmdCtx->UpdateBuffer(objectBufferHandle, sizeof(ObjectData), &oData);
+		ctx.cmdCtx->SetBufferVS(objectBufferHandle, 2);
 	
-		ctx.ctx->DrawGeometryIndexed(item.meshHandle, item.subMeshIndex);
+		ctx.cmdCtx->DrawIndexed(item.indexCount, item.baseIndexLocation, item.baseVertexLocation);
 	}
 }

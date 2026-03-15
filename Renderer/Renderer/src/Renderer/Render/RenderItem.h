@@ -22,7 +22,9 @@ namespace zRender {
 	struct RenderItem {
 		uint32_t flags;
 
-		uint32_t subMeshIndex;
+		int baseVertexLocation;
+		uint32_t baseIndexLocation;
+		uint32_t indexCount;
 
 		MeshHandle meshHandle;
 

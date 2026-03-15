@@ -6,7 +6,7 @@
 #include"Renderer/Core/Handles.h"
 #include"Renderer/Render/Camera.h"
 #include"Renderer/Render/RenderItem.h"
-#include"Renderer/Render/RenderContextInterface.h"
+#include"Renderer/Render/CommandContextInterface.h"
 #include"Renderer/Render/RenderConstantBuffers.h"
 
 namespace zRender {
@@ -18,7 +18,7 @@ namespace zRender {
 	};
 
 	struct RenderPassContext {
-		IRenderContext* ctx = nullptr;
+		ICommandContext* cmdCtx = nullptr;
 		const Camera* renderCamera = nullptr;
 
 		Light* lights = nullptr;

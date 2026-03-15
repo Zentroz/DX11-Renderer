@@ -4,7 +4,7 @@ namespace zRender {
 
 	GradiantPass::GradiantPass(const GradiantPassInput& input)
 		: outputTextureHandle(input.outputTextureHandle),
-		pipeline(input.pipeline)
+		pipelineHandle(input.pipelineHandle)
 	{
 	}
 
@@ -18,7 +18,8 @@ namespace zRender {
 	}
 
 	void GradiantPass::Execute(const RenderPassContext& ctx) {
-		ctx.ctx->BindPipeline(pipeline);
-		ctx.ctx->Draw(3);
+		ctx.cmdCtx->SetViewport(ctx.renderCamera->width, ctx.renderCamera->height);
+		ctx.cmdCtx->SetPipeline(pipelineHandle);
+		ctx.cmdCtx->Draw(3, 0);
 	}
 }

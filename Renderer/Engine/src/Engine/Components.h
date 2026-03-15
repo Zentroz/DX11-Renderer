@@ -26,12 +26,18 @@ struct TransformComponent {
 };
 
 struct MeshFilter {
-	uuid mesh;
-	uint16_t subMeshIndex;
+	uuid mesh{};
+	//uint16_t subMeshIndex {};
+
+	uint32_t vertexCount{};
+	uint32_t vertexOffset{};
+
+	uint32_t indexCount{};
+	uint32_t indexOffset{};
 
 	MeshFilter() = default;
-	MeshFilter(uuid mesh, uint16_t subMeshIndex)
-		: mesh(mesh), subMeshIndex(subMeshIndex)
+	MeshFilter(uuid mesh, uint32_t vertexOffset, uint32_t vertexCount, uint32_t indexOffset, uint32_t indexCount)
+		: mesh(mesh), vertexCount(vertexCount), vertexOffset(vertexOffset), indexOffset(indexOffset), indexCount(indexCount)
 	{}
 };
 

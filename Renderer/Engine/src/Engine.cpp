@@ -15,10 +15,10 @@ void Engine::Init(const EngineInitData& initData) {
 	graphicsDevice = std::make_unique<D3D11Device>();
 	graphicsDevice->Initialize(initData.hWnd);
 
-	resourceProvider = std::make_unique<D3D11ResourceProvider>(graphicsDevice.get());
-	renderContext = std::make_unique<D3D11RenderContext>(graphicsDevice->GetDeviceContext(), graphicsDevice->GetSwapChain(), resourceProvider.get());
-
-	renderer.Setup(renderContext.get(), resourceProvider.get());
+	resourceProvider = graphicsDevice->CreateResourceProvider();
+	commandContext = graphicsDevice->CreateCommandContext();
+	static_cast<D3D11CommandContext*>(commandContext)->SetStorage(static_cast<D3D11ResourceProvider*>(resourceProvider)->GetStorage());
+	renderer.Setup(commandContext, resourceProvider);
 
 	Camera cam{};
 	cam.up = vec3(0, 1, 0);
@@ -43,7 +43,6 @@ void Engine::Init(const EngineInitData& initData) {
 		}
 	);
 
-	CreatePipelines();
 	CreateRenderPasses(initData.width, initData.height);
 	
 	UI::Setup(initData.hWnd, graphicsDevice->GetDevice(), graphicsDevice->GetDeviceContext());
@@ -51,7 +50,6 @@ void Engine::Init(const EngineInitData& initData) {
 	freeCamera.GetCamera().width = initData.width;
 	freeCamera.GetCamera().height = initData.height;
 
-	renderContext->SetScreenSize(initData.width, initData.height);
 	renderer.SetScreenSize(initData.width, initData.height);
 
 	OpenModelFile("Assets/Mesh/sponza/scene.gltf");
@@ -61,11 +59,6 @@ void Engine::CleanUp() {
 	renderer.Shutdown();
 
 	UI::CleanUp();
-
-	renderContext.release();
-	resourceProvider.release();
-
-	graphicsDevice->Release();
 }
 
 void Engine::QueueResize(int newWidth, int newHeight, bool fullscreen) {
@@ -76,11 +69,10 @@ void Engine::QueueResize(int newWidth, int newHeight, bool fullscreen) {
 }
 
 void Engine::Resize(int newWidth, int newHeight, bool fullscreen) {
-	resourceProvider->ReleaseScreenTexture();
+	//resourceProvider->ReleaseScreenTexture();
 	graphicsDevice->Resize(newWidth, newHeight, fullscreen);
 
-	resourceProvider->RecreateScreenTextureHandle();
-	renderContext->SetScreenSize(newWidth, newHeight);
+	//resourceProvider->RecreateScreenTextureHandle();
 
 	freeCamera.GetCamera().width = newWidth;
 	freeCamera.GetCamera().height = newHeight;
@@ -117,7 +109,9 @@ void Engine::Run() {
 	renderer.EndRender();
 
 	UI::Render();
-	renderContext->EndFrame();
+
+	graphicsDevice->EndFrame();
+	commandContext->EndFrame();
 }
 
 void Engine::OpenModelFile(const std::string& path) {
@@ -145,7 +139,9 @@ void Engine::OpenModelFile(const std::string& path) {
 					vec3(DirectX::XMVectorGetX(scale), DirectX::XMVectorGetY(scale), DirectX::XMVectorGetZ(scale))
 				);
 
-				registry.emplace<MeshFilter>(e, model.meshHandle, subMeshIndex);
+				const SubMesh& subMesh = loadedModel.mesh->subMeshes[subMeshIndex];
+
+				registry.emplace<MeshFilter>(e, model.meshHandle, subMesh.vertexOffset, subMesh.vertexCount, subMesh.indexOffset, subMesh.indexCount);
 
 				MaterialComponent material{
 					.baseColor = m.baseColor,
@@ -202,6 +198,7 @@ void Engine::OpenModelFile(const std::string& path) {
 }
 
 bool Engine::Intersect(entt::entity& outEntity) {
+	/*
 	vec3 rayO = freeCamera.GetCamera().position;
 	vec3 target = freeCamera.GetCamera().position + freeCamera.GetCamera().forward;
 	vec3 rayD = normalize(target - rayO);
@@ -254,72 +251,8 @@ bool Engine::Intersect(entt::entity& outEntity) {
 	}
 
 	outEntity = closest;
+	*/
 	return true;
-}
-
-void Engine::CreatePipelines() {
-	ShaderLoader shaderLoader;
-
-	Shader gShader;
-	gShader.inputLayoutFlag = InputLayout_PNTT;
-	shaderLoader.Load(gShader, "Assets/Shaders/GeometryShader.hlsl");
-
-	Shader sShader;
-	sShader.inputLayoutFlag = InputLayout_PNTT;
-	shaderLoader.Load(sShader, "Assets/Shaders/ShadowShader.hlsl");
-
-	Shader lightShader;
-	lightShader.inputLayoutFlag = InputLayout_None;
-	shaderLoader.Load(lightShader, "Assets/Shaders/LightingShader.hlsl");
-
-	Shader gradiantShader;
-	gradiantShader.inputLayoutFlag = InputLayout_None;
-	shaderLoader.Load(gradiantShader, "Assets/Shaders/GradiantShader.hlsl");
-
-	Shader presentShader;
-	presentShader.inputLayoutFlag = InputLayout_None;
-	shaderLoader.Load(presentShader, "Assets/Shaders/PresentShader.hlsl");
-
-	resourceProvider->AddPipelineStateContainer({
-		.name = "GBufferPass",
-		.shaderHandle = resourceProvider->LoadShader(gShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_Back, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_All, DepthFunc_Less),
-		.topology = PrimitiveTopology_Triangelist
-	});
-
-
-	resourceProvider->AddPipelineStateContainer({
-		.name = "ShadowPass",
-		.shaderHandle = resourceProvider->LoadShader(sShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_Back, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_All, DepthFunc_Less),
-		.topology = PrimitiveTopology_Triangelist
-	});
-
-	resourceProvider->AddPipelineStateContainer({
-		.name = "LightPass",
-		.shaderHandle = resourceProvider->LoadShader(lightShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never),
-		.topology = PrimitiveTopology_Triangelist,
-	});
-
-	resourceProvider->AddPipelineStateContainer({
-		.name = "GradiantPass",
-		.shaderHandle = resourceProvider->LoadShader(gradiantShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_LessEqual),
-		.topology = PrimitiveTopology_Triangelist
-	});
-
-	resourceProvider->AddPipelineStateContainer({
-		.name = "PresentPass",
-		.shaderHandle = resourceProvider->LoadShader(presentShader),
-		.rasterizerHandle = resourceProvider->GetRasteriserHandle(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid),
-		.depthStencilHandle = resourceProvider->GetDepthStateHandle(DepthWriteMask_Zero, DepthFunc_Never),
-		.topology = PrimitiveTopology_Triangelist
-	});
 }
 
 void Engine::CreateRenderPasses(int width, int height) {
@@ -354,6 +287,20 @@ void Engine::CreateRenderPasses(int width, int height) {
 	BufferHandle objectBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(ObjectData), &oData);
 	BufferHandle materialBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Dynamic, Buffer_CPU_Write, sizeof(MaterialData), &mData);
 
+	ShaderLoader shaderLoader;
+
+	Shader gShader;
+	Shader shadowShader;
+	Shader lightShader;
+	Shader gradiantShader;
+	Shader presentShader;
+
+	shaderLoader.Load(gShader, "Assets/Shaders/GeometryShader.hlsl");
+	shaderLoader.Load(shadowShader, "Assets/Shaders/ShadowShader.hlsl");
+	shaderLoader.Load(lightShader, "Assets/Shaders/LightingShader.hlsl");
+	shaderLoader.Load(gradiantShader, "Assets/Shaders/GradiantShader.hlsl");
+	shaderLoader.Load(presentShader, "Assets/Shaders/PresentShader.hlsl");
+
 	GBuffer gData = {
 		.albedoRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Linear),
 		.normalRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA16F, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Point),
@@ -364,24 +311,43 @@ void Engine::CreateRenderPasses(int width, int height) {
 		.frameBufferHandle = frameBufferHandle,
 		.objectBufferHandle = objectBufferHandle,
 		.materialBufferHandle = materialBufferHandle,
-		.pipelineStateHandles = resourceProvider->GetPipelineStateContainer("GBufferPass")
+		.pipelineStateHandle = resourceProvider->CreatePipeline(
+			{
+				.vertexShaderSrc = gShader.vertexShaderSrc,
+				.pixelShaderSrc = gShader.pixelShaderSrc,
+				.rasterizerFillMode = RasterizerFunc_FillMode_Solid,
+				.rasterizerCullMode = RasterizerFunc_CullMode_Back, 
+				.depthWriteMask = DepthWriteMask_All, 
+				.depthFunc = DepthFunc_Less,
+				.samplerFilterModes = { TextureFilter::Linear, TextureFilter::Point }
+			}
+		)
 	};
 	renderer.AddRenderPass(new GBufferPass(gData));
+
 	ShadowPass::LightBuffer shadowLightData{};
 	ShadowPass::InitData shadowInit{
 		.depthSV = resourceProvider->CreateTexture(4096, 4096, TextureFormat_R32_Typeless, TextureUsageFlags::TextureUsageFlag_DepthStencil | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Point),
 		.debugRT = resourceProvider->CreateTexture(4096, 4096, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Linear),
 		.lightBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(ShadowPass::LightBuffer), &shadowLightData),
 		.objectBufferHandle = objectBufferHandle,
-		.pipeline = resourceProvider->GetPipelineStateContainer("ShadowPass")
+		.pipelineHandle = resourceProvider->CreatePipeline(
+			{
+				.vertexShaderSrc = shadowShader.vertexShaderSrc,
+				.pixelShaderSrc = shadowShader.pixelShaderSrc,
+				.rasterizerFillMode = RasterizerFunc_FillMode_Solid,
+				.rasterizerCullMode = RasterizerFunc_CullMode_Back,
+				.depthWriteMask = DepthWriteMask_All,
+				.depthFunc = DepthFunc_Less,
+				.samplerFilterModes = { TextureFilter::Linear, TextureFilter::Point }
+			}
+		)
 	};
 	renderer.AddRenderPass(new ShadowPass(shadowInit));
 
 	LightingPass::MatricesBufferData lpmData;
 	lpmData.invViewProj = DirectX::XMMatrixIdentity();
-
 	LightingPass::LightPassShaderData lightPassShaderData{};
-
 	LightingPass::InitData lightPassData{
 		.albedoRT = gData.albedoRT,
 		.normalRT = gData.normalRT,
@@ -391,7 +357,17 @@ void Engine::CreateRenderPasses(int width, int height) {
 		.outputRT = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA16F, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Linear),
 		.lightBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(LightingPass::LightPassShaderData), &lightPassShaderData),
 		.matricesBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(LightingPass::MatricesBufferData), &lpmData),
-		.pipeline = resourceProvider->GetPipelineStateContainer("LightPass")
+		.pipelineHandle = resourceProvider->CreatePipeline(
+			{
+				.vertexShaderSrc = lightShader.vertexShaderSrc,
+				.pixelShaderSrc = lightShader.pixelShaderSrc,
+				.rasterizerFillMode = RasterizerFunc_FillMode_Solid,
+				.rasterizerCullMode = RasterizerFunc_CullMode_None,
+				.depthWriteMask = DepthWriteMask_Zero,
+				.depthFunc = DepthFunc_Never,
+				.samplerFilterModes = { TextureFilter::Linear, TextureFilter::Point }
+			}
+		)
 	};
 	renderer.AddRenderPass(new LightingPass(lightPassData));
 
@@ -402,7 +378,16 @@ void Engine::CreateRenderPasses(int width, int height) {
 
 	GradiantPassInput gradiantPassInput{
 		.outputTextureHandle = resourceProvider->CreateTexture(width, height, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget | TextureUsageFlags::TextureUsageFlag_ShaderResource, TextureFilter::Linear),
-		.pipeline = resourceProvider->GetPipelineStateContainer("GradiantPass")
+		.pipelineHandle = resourceProvider->CreatePipeline(
+			{
+				.vertexShaderSrc = gradiantShader.vertexShaderSrc,
+				.pixelShaderSrc = gradiantShader.pixelShaderSrc,
+				.rasterizerFillMode = RasterizerFunc_FillMode_Solid,
+				.rasterizerCullMode = RasterizerFunc_CullMode_None,
+				.depthWriteMask = DepthWriteMask_Zero,
+				.depthFunc = DepthFunc_LessEqual
+			}
+		)
 	};
 	renderer.AddRenderPass(new GradiantPass(gradiantPassInput));
 
@@ -415,7 +400,17 @@ void Engine::CreateRenderPasses(int width, int height) {
 		.backgroundTextureHandle = gradiantPassInput.outputTextureHandle,
 		.screenTextureHandle = resourceProvider->GetScreenTextureHandle(),
 		.outputTextureBufferHandle = resourceProvider->CreateBuffer(Buffer_Uasge_Default, 0, sizeof(PresentPass::OuputConstantBuffer), &presentPassOuputBufferData),
-		.pipeline = resourceProvider->GetPipelineStateContainer("PresentPass")
+		.pipelineHandle = resourceProvider->CreatePipeline(
+			{
+				.vertexShaderSrc = presentShader.vertexShaderSrc,
+				.pixelShaderSrc = presentShader.pixelShaderSrc,
+				.rasterizerFillMode = RasterizerFunc_FillMode_Solid,
+				.rasterizerCullMode = RasterizerFunc_CullMode_None,
+				.depthWriteMask = DepthWriteMask_Zero,
+				.depthFunc = DepthFunc_Never,
+				.samplerFilterModes = { TextureFilter::Linear, TextureFilter::Point }
+			}
+		)
 	};
 	renderer.AddRenderPass(new PresentPass(presentPassInput));
 }

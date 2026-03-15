@@ -5,7 +5,7 @@ namespace zRender {
 	void RenderGraph::AddPass(IRenderPass* pass) {
 		m_RenderPasses.push_back(pass);
 	}
-	void BindRenderPassResource(IRenderContext* ctx, const std::vector<RenderPassResource>& resources, bool isOutput) {
+	void BindRenderPassResource(ICommandContext* ctx, const std::vector<RenderPassResource>& resources, bool isOutput) {
 		std::vector<Handle> rtvs;
 		Handle dsv{};
 
@@ -22,26 +22,26 @@ namespace zRender {
 				// Binding Type
 				if (r.usage == RenderPassResource::SRV) {
 					// Bind Stages
-					if (r.stage == RenderPassResource::VS) ctx->BindTextureVS(r.slot, r.handle);
-					else if (r.stage == RenderPassResource::PS) ctx->BindTexturePS(r.slot, r.handle);
+					if (r.stage == RenderPassResource::VS) ctx->SetTextureVS(r.handle, r.slot);
+					else if (r.stage == RenderPassResource::PS) ctx->SetTexturePS(r.handle, r.slot);
 				}
 				else if (r.usage == RenderPassResource::Buffer) {
 					// Bind Stages
-					if (r.stage == RenderPassResource::VS) ctx->BindBufferVS(r.slot, r.handle);
-					else if (r.stage == RenderPassResource::PS) ctx->BindBufferPS(r.slot, r.handle);
+					if (r.stage == RenderPassResource::VS) ctx->SetBufferVS(r.handle, r.slot);
+					else if (r.stage == RenderPassResource::PS) ctx->SetBufferPS(r.handle, r.slot);
 				}
 			}
 		}
 
-		if (isOutput) ctx->BindMultiViews(rtvs.size(), rtvs.data(), dsv);
+		if (isOutput) ctx->SetRenderTargets(rtvs.size(), rtvs.data(), dsv);
 	}
 	void RenderGraph::ExecutePass(IRenderPass* pass, const RenderPassContext& ctx) {
 		const RenderPassDesc desc = pass->GetDesc();
 
-		ctx.ctx->ClearStatesAndResources();
+		ctx.cmdCtx->SetRenderTargets(0, nullptr, uuid());
 
-		BindRenderPassResource(ctx.ctx, desc.outputs, true);
-		BindRenderPassResource(ctx.ctx, desc.inputs, false);
+		BindRenderPassResource(ctx.cmdCtx, desc.outputs, true);
+		BindRenderPassResource(ctx.cmdCtx, desc.inputs, false);
 
 		pass->Execute(ctx);
 	}

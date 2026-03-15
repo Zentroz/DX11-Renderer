@@ -16,7 +16,7 @@ namespace zRender {
 		BufferHandle objectBufferHandle;
 		BufferHandle materialBufferHandle;
 
-		PipelineStateContainer pipelineStateHandles;
+		PipelineHandle pipelineStateHandle;
 	};
 
 	class GBufferPass : public IRenderPass {
@@ -37,11 +37,11 @@ namespace zRender {
 		BufferHandle objectBufferHandle;
 		BufferHandle materialBufferHandle;
 
-		PipelineStateContainer pipelineStateHandles;
+		PipelineHandle pipelineStateHandle;
 
 		float totalTime = 0.0f;
 
 	private:
-		void Render(IRenderContext* ctx, const std::vector<RenderItem>* items);
+		void Render(ICommandContext* ctx, const std::vector<RenderItem>* items);
 	};
 }

@@ -87,27 +87,33 @@
     <ClInclude Include="src\Renderer\Core\Math.h" />
     <ClInclude Include="src\Renderer\Core\uuid.h" />
     <ClInclude Include="src\Renderer\Core\Resources.h" />
+    <ClInclude Include="src\Renderer\D3D11\CommandContext.h" />
     <ClInclude Include="src\Renderer\D3D11\GraphicsDevice.h" />
-    <ClInclude Include="src\Renderer\D3D11\RenderContext.h" />
     <ClInclude Include="src\Renderer\D3D11\ResourceProvider.h" />
+    <ClInclude Include="src\Renderer\D3D11\Resources.h" />
+    <ClInclude Include="src\Renderer\D3D11\ResourceStorage.h" />
+    <ClInclude Include="src\Renderer\D3D12\d3dx12.h" />
+    <ClInclude Include="src\Renderer\D3D12\GraphicsDevice.h" />
     <ClInclude Include="src\Renderer\Render\Camera.h" />
+    <ClInclude Include="src\Renderer\Render\CommandContextInterface.h" />
     <ClInclude Include="src\Renderer\Render\GraphicsDeviceInterface.h" />
     <ClInclude Include="src\Renderer\Render\PipelineStateContainer.h" />
     <ClInclude Include="src\Renderer\Render\RenderConstantBuffers.h" />
-    <ClInclude Include="src\Renderer\Render\RenderContextInterface.h" />
     <ClInclude Include="src\Renderer\Render\RenderGraph.h" />
     <ClInclude Include="src\Renderer\Render\RenderItem.h" />
     <ClInclude Include="src\Renderer\Render\RenderPassInterface.h" />
     <ClInclude Include="src\Renderer\Render\RenderTargetInterface.h" />
     <ClInclude Include="src\Renderer\Render\ResourceProviderInterface.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
+    <ClInclude Include="src\Renderer\Render\ResourceStorageInterface.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer\Core\Math.cpp" />
     <ClCompile Include="src\Renderer\Core\uuid.cpp" />
+    <ClCompile Include="src\Renderer\D3D11\CommandContext.cpp" />
     <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp" />
-    <ClCompile Include="src\Renderer\D3D11\RenderContext.cpp" />
     <ClCompile Include="src\Renderer\D3D11\ResourceProvider.cpp" />
+    <ClCompile Include="src\Renderer\D3D12\GraphicsDevice.cpp" />
     <ClCompile Include="src\Renderer\Render\Camera.cpp" />
     <ClCompile Include="src\Renderer\Render\RenderGraph.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />

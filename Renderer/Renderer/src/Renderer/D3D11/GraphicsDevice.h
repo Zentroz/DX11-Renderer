@@ -10,21 +10,27 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 #include"Renderer/Render/GraphicsDeviceInterface.h"
+#include"Renderer/D3D11/CommandContext.h"
+#include"Renderer/D3D11/ResourceProvider.h"
 
 namespace zRender {
     class D3D11Device : public GraphicsDevice {
     public:
         void Initialize(void* windowHandle) override;
-        void Release() override;
+        void Release() override; 
 
         void Resize(int newWidth, int newHeight, bool isFullscreen);
 
-        ID3D11RenderTargetView* CreateRenderTarget();
         ID3D11Texture2D* GetBackBufferTexture();
 
         ID3D11Device* GetDevice() const { return m_Device.Get(); }
         IDXGISwapChain* GetSwapChain() const { return m_SwapChain.Get(); }
         ID3D11DeviceContext* GetDeviceContext() const { return m_Context.Get(); }
+
+        IRenderResourceProvider* CreateResourceProvider() override;
+        ICommandContext* CreateCommandContext() override;
+
+        void EndFrame() override;
 
     private:
         Microsoft::WRL::ComPtr<ID3D11Device> m_Device;

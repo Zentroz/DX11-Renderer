@@ -6,6 +6,7 @@
 #include<DirectXMath.h>
 
 #include"Renderer/Core/Math.h"
+#include"Renderer/Core/Handles.h"
 
 namespace zRender {
 	struct Resource {
@@ -49,55 +50,25 @@ namespace zRender {
 		std::vector<SubMesh> subMeshes;
 
 		// GPU
+		MeshHandle gpuResource;
 		std::vector<SubMeshGPU> subMeshesGPU;
-		ID3D11Buffer* vertexBuffer = nullptr;
-		ID3D11Buffer* indexBuffer = nullptr;
-		UINT vertexStride = 0;
 
 		void Release() override {
 			vertices.clear();
 			indices.clear();
 			subMeshes.clear();
-
-			subMeshesGPU.clear();
-			if (vertexBuffer) {
-				vertexBuffer->Release();
-				vertexBuffer = nullptr;
-			}
-			if (indexBuffer) {
-				indexBuffer->Release();
-				indexBuffer = nullptr;
-			}
 		}
 	};
 
 	struct Shader : public Resource {
-		// Raw
 		std::string vertexShaderSrc;
 		std::string pixelShaderSrc;
-		uint32_t inputLayoutFlag;
 
-		// GPU
-		ID3D11VertexShader* vertexShader = nullptr;
-		ID3D11PixelShader* pixelShader = nullptr;
-		ID3D11InputLayout* inputLayout = nullptr;
+		ShaderHandle gpuResource;
 
 		void Release() override {
 			vertexShaderSrc.clear();
 			pixelShaderSrc.clear();
-
-			if (vertexShader) {
-				vertexShader->Release();
-				vertexShader = nullptr;
-			}
-			if (pixelShader) {
-				pixelShader->Release();
-				pixelShader = nullptr;
-			}
-			if (inputLayout) {
-				inputLayout->Release();
-				inputLayout = nullptr;
-			}
 		}
 	};
 
@@ -116,37 +87,12 @@ namespace zRender {
 		} filterMode;
 
 		// GPU
-		ID3D11Texture2D* texture = nullptr;
-		ID3D11ShaderResourceView* shaderResourceView = nullptr;
-		ID3D11RenderTargetView* renderTargetView = nullptr;
-		ID3D11DepthStencilView* depthStencilView = nullptr;
-		ID3D11SamplerState* samplerState = nullptr;
+		TextureHandle gpuResource;
 
 		void Release() override {
 			if (pixels) {
 				delete pixels;
 				pixels = nullptr;
-			}
-
-			if (texture) {
-				texture->Release();
-				texture = nullptr;
-			}
-			if (renderTargetView) {
-				renderTargetView->Release();
-				renderTargetView = nullptr;
-			}
-			if (depthStencilView) {
-				depthStencilView->Release();
-				depthStencilView = nullptr;
-			}
-			if (shaderResourceView) {
-				shaderResourceView->Release();
-				shaderResourceView = nullptr;
-			}
-			if (samplerState) {
-				samplerState->Release();
-				samplerState = nullptr;
 			}
 		}
 	};

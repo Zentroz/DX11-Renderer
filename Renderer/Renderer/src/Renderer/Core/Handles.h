@@ -10,6 +10,8 @@ using BufferHandle = uuid;
 using TextureHandle = uuid;
 using RasterizerHandle = uuid;
 using DepthStateHandle = uuid;
+using PipelineHandle = uuid;
+using RTVHandle = uuid;
 
 struct RenderResourceHandle
 {
