@@ -18,7 +18,7 @@ namespace zRender {
 		frameBufferHandle(gBuffer.frameBufferHandle),
 		objectBufferHandle(gBuffer.objectBufferHandle), 
 		materialBufferHandle(gBuffer.materialBufferHandle),
-		pipelineStateHandles(gBuffer.pipelineStateHandles)
+		pipelineStateHandle(gBuffer.pipelineStateHandle)
 	{
 	}
 
@@ -37,13 +37,15 @@ namespace zRender {
 	}
 
 	void GBufferPass::Execute(const RenderPassContext& ctx) {
-		float clearColor[4] = { 0, 0, 0, 1 };
-		ctx.ctx->ClearRenderTarget(albedoRT, clearColor);
-		ctx.ctx->ClearRenderTarget(normalRT, clearColor);
-		ctx.ctx->ClearRenderTarget(materialRT, clearColor);
-		ctx.ctx->ClearDepthStencil(depthRT);
+		float clearColor[4] = { 0, 0, 0.25f, 1 };
+		ctx.cmdCtx->ClearRTV(albedoRT, clearColor);
+		ctx.cmdCtx->ClearRTV(normalRT, clearColor);
+		ctx.cmdCtx->ClearRTV(materialRT, clearColor);
+		ctx.cmdCtx->ClearDSV(depthRT);
 
-		ctx.ctx->BindPipeline(pipelineStateHandles);
+		ctx.cmdCtx->SetViewport(ctx.renderCamera->width, ctx.renderCamera->height);
+
+		ctx.cmdCtx->SetPipeline(pipelineStateHandle);
 
 		auto& io = ImGui::GetIO();
 
@@ -57,18 +59,18 @@ namespace zRender {
 			.z = (float)ctx.renderCamera->width, 
 			.w = (float)ctx.renderCamera->height
 		};
-		ctx.ctx->UpdateBuffer(frameBufferHandle, sizeof(FrameData), &fData);
+		ctx.cmdCtx->UpdateBuffer(frameBufferHandle, sizeof(FrameData), &fData);
 
-		ctx.ctx->BindBufferVS(0, staticBufferHandle);
-		ctx.ctx->BindBufferPS(0, staticBufferHandle);
-		ctx.ctx->BindBufferVS(1, frameBufferHandle);
-		ctx.ctx->BindBufferPS(1, frameBufferHandle);
+		ctx.cmdCtx->SetBufferVS(staticBufferHandle, 0);
+		ctx.cmdCtx->SetBufferPS(staticBufferHandle, 0);
+		ctx.cmdCtx->SetBufferVS(frameBufferHandle, 1);
+		ctx.cmdCtx->SetBufferPS(frameBufferHandle, 1);
 
-		Render(ctx.ctx, ctx.renderItemsOpaque);
-		Render(ctx.ctx, ctx.renderItemsAplhaTest);
+		Render(ctx.cmdCtx, ctx.renderItemsOpaque);
+		Render(ctx.cmdCtx, ctx.renderItemsAplhaTest);
 	}
 
-	void GBufferPass::Render(IRenderContext* ctx, const std::vector<RenderItem>* items) {
+	void GBufferPass::Render(ICommandContext* ctx, const std::vector<RenderItem>* items) {
 		for (auto& item : *items) {
 			MaterialData mData;
 			mData.diffuseColor = item.materialData.baseColor;
@@ -82,23 +84,22 @@ namespace zRender {
 			ctx->UpdateBuffer(objectBufferHandle, sizeof(ObjectData), &oData);
 			ctx->UpdateBuffer(materialBufferHandle, sizeof(MaterialData), &mData);
 
-			ctx->BindBufferVS(2, objectBufferHandle);
-			ctx->BindBufferPS(2, materialBufferHandle);
+			ctx->SetBufferVS(objectBufferHandle, 2);
+			ctx->SetBufferPS(materialBufferHandle, 2);
+
+			ctx->SetVertexBuffer(item.meshHandle);
+			ctx->SetIndexBuffer(item.meshHandle);
 
 			for (uint8_t i = 0; i < 16; i++) {
 				if (i >= item.materialData.textureHandles.size()) {
-					if (i < 3)
-						ctx->BindBufferPS(i, whiteTextureHandle);
-					else
-						ctx->BindBufferPS(i, {});
-
+					ctx->SetTexturePS(whiteTextureHandle, i);
 					continue;
 				}
 
-				ctx->BindTexturePS(i, item.materialData.textureHandles[i].isNull() ? whiteTextureHandle : item.materialData.textureHandles[i]);
+				ctx->SetTexturePS(item.materialData.textureHandles[i].isNull() ? whiteTextureHandle : item.materialData.textureHandles[i], i);
 			}
 
-			ctx->DrawGeometryIndexed(item.meshHandle, item.subMeshIndex);
+			ctx->DrawIndexed(item.indexCount, item.baseIndexLocation, item.baseVertexLocation);
 		}
 	}
 }

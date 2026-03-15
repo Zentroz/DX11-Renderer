@@ -36,9 +36,6 @@
     <ClInclude Include="src\Renderer\D3D11\GraphicsDevice.h">
       <Filter>D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\D3D11\RenderContext.h">
-      <Filter>D3D11</Filter>
-    </ClInclude>
     <ClInclude Include="src\Renderer\D3D11\ResourceProvider.h">
       <Filter>D3D11</Filter>
     </ClInclude>
@@ -52,9 +49,6 @@
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\Render\RenderConstantBuffers.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Renderer\Render\RenderContextInterface.h">
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\Render\RenderGraph.h">
@@ -73,6 +67,13 @@
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="src\Renderer\Renderer.h" />
+    <ClInclude Include="src\Renderer\D3D12\GraphicsDevice.h" />
+    <ClInclude Include="src\Renderer\Render\CommandContextInterface.h" />
+    <ClInclude Include="src\Renderer\D3D11\CommandContext.h" />
+    <ClInclude Include="src\Renderer\D3D12\d3dx12.h" />
+    <ClInclude Include="src\Renderer\Render\ResourceStorageInterface.h" />
+    <ClInclude Include="src\Renderer\D3D11\ResourceStorage.h" />
+    <ClInclude Include="src\Renderer\D3D11\Resources.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer\Core\Math.cpp">
@@ -82,9 +83,6 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Renderer\D3D11\GraphicsDevice.cpp">
-      <Filter>D3D11</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Renderer\D3D11\RenderContext.cpp">
       <Filter>D3D11</Filter>
     </ClCompile>
     <ClCompile Include="src\Renderer\D3D11\ResourceProvider.cpp">
@@ -97,5 +95,7 @@
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="src\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Renderer\D3D12\GraphicsDevice.cpp" />
+    <ClCompile Include="src\Renderer\D3D11\CommandContext.cpp" />
   </ItemGroup>
 </Project>

@@ -23,12 +23,9 @@ Texture2D normalTex : register(t2);
 Texture2D materialTex : register(t3);
 Texture2D depthTex : register(t4);
 Texture2D backgroundTex : register(t5);
-SamplerState samp : register(s0);
-SamplerState samp1 : register(s1);
-SamplerState samp2 : register(s2);
-SamplerState samp3 : register(s3);
-SamplerState samp4 : register(s4);
-SamplerState samp5 : register(s5);
+
+SamplerState linearSampler : register(s0);
+SamplerState pointSampler : register(s1);
 
 float4 DepthToScreenColor(float depth, float nearPlane, float farPlane)
 {
@@ -52,28 +49,28 @@ float4 PSMain(float4 pos : SV_Position) : SV_Target
 	float nearPlane = 0.01;
 	float farPlane = 100.0;
     
-	float depth = depthTex.Sample(samp4, uv).r;
+	float depth = depthTex.Sample(pointSampler, uv).r;
     
 	if (Linear01Depth(depth, nearPlane, farPlane) >= 0.999)
 	{
-		return backgroundTex.Sample(samp5, uv);
+		return backgroundTex.Sample(linearSampler, uv);
 	}
     
     if (outputTextureIndex == 0) {
-        output = outputTex.Sample(samp, uv);
+		output = outputTex.Sample(linearSampler, uv);
 	}
     else if (outputTextureIndex == 1) {
-        output = albedoTex.Sample(samp1, uv);
-    }
+		output = albedoTex.Sample(linearSampler, uv);
+	}
     else if (outputTextureIndex == 2) {
-        output = normalTex.Sample(samp2, uv);
+        output = normalTex.Sample(pointSampler, uv);
     }
     else if (outputTextureIndex == 3) {
-        output = materialTex.Sample(samp3, uv);
+        output = materialTex.Sample(pointSampler, uv);
 	}
     else {
 		output = DepthToScreenColor(depth, nearPlane, farPlane);
 	}
-
-    return output;
+    
+	return output;
 }

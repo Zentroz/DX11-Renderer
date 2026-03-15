@@ -3,94 +3,55 @@
 #include<d3d11.h>
 #include<d3dcompiler.h>
 #include<d3d11shader.h>
-#include<wrl/client.h>
+#include<wrl.h>
 #include<memory>
 #include<unordered_map>
 
-#include"Renderer/Core/uuid.h"
-#include"Renderer/Core/Handles.h"
 #include"Renderer/Core/Resources.h"
-#include"Renderer/D3D11/GraphicsDevice.h"
-#include"Renderer/Render/ResourceProviderInterface.h"
-#include"Renderer/Render/PipelineStateContainer.h"
+#include"Renderer/D3D11/Resources.h"
+#include"Renderer/D3D11/ResourceStorage.h"
 #include"Renderer/Render/RenderPassInterface.h"
+#include"Renderer/Render/ResourceProviderInterface.h"
 
 namespace zRender {
-	enum InputLayout { InputLayout_None, InputLayout_PNTT, InputLayout_P };
 
 	class D3D11ResourceProvider : public IRenderResourceProvider {
-	private:
-		template <typename T>
-		using ResourceMap = std::unordered_map<uuid, std::shared_ptr<T>>;
-
 	public:
-		D3D11ResourceProvider(D3D11Device* pDevice);
+		D3D11ResourceProvider(ID3D11Device* pDevice, ID3D11Texture2D* backBufferTexture);
 		~D3D11ResourceProvider() = default;
+
+		D3D11ResourceStorage* GetStorage() { return &storage; }
 
 		void ReleaseScreenTexture();
 		void RecreateScreenTextureHandle();
 
-		MeshHandle LoadMesh(const Mesh& rawMesh);
-		ShaderHandle LoadShader(const Shader& rawShader);
-		TextureHandle LoadTexture(const Texture& rawTexture);
+		MeshHandle LoadMesh(const Mesh& rawMesh) override;
+		TextureHandle LoadTexture(const Texture& rawTexture) override;
 		TextureHandle LoadTextureCubeMap(const Texture rawTexture[6]);
 
-		TextureHandle CreateTexture(int width, int height, TextureUsageFlags usageFlags, TextureFilter filter, vec4 initialColor);
+		TextureHandle CreateTexture(int width, int height, TextureUsageFlags usageFlags, TextureFilter filter, vec4 initialColor) override;
 		TextureHandle CreateTexture(int width, int height, zRender::TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter) override;
-		void DestroyTexture(const uuid& id);
 
 		BufferHandle CreateBuffer(zRender::Buffer_Usage usage, int accessFlag, UINT byteWidth, void* initData) override;
-		ID3D11Buffer* GetBuffer(BufferHandle h);
 
-		RasterizerHandle GetRasteriserHandle(RasterizerCullMode cullMode, RasterizerFillMode fillMode) override;
-		RasterizerHandle CreateRasterizer(RasterizerCullMode cullMode, RasterizerFillMode fillMode);
-		ID3D11RasterizerState* GetRasterizerState(RasterizerHandle handle);
-
-		DepthStateHandle CreateDepthStencilState(DepthWriteMask write, DepthFunc func);
-		DepthStateHandle GetDepthStateHandle(DepthWriteMask write, DepthFunc func) override;
-		ID3D11DepthStencilState* GetDepthStencilState(DepthStateHandle handle);
 		ID3D11DepthStencilView* CreateDepthStencilView();
 
-		Handle CreateBlendState(bool blendEnable);
-		ID3D11BlendState* GetBlendState(Handle handle);
-
-		template <typename T>
-		T* GetResource(const Handle& h);
+		PipelineHandle CreatePipeline(const PipelineDesc& desc) override;
 
 	private:
-		D3D11Device* device = nullptr;
+		ID3D11Device* device;
+		D3D11ResourceStorage storage{};
 
-		ResourceMap<Mesh> m_MeshMap;
-		ResourceMap<Shader> m_ShaderMap;
-		ResourceMap<Texture> m_TextureMap;
-		std::unordered_map<uuid, ID3D11RenderTargetView*> m_RenderTargetMap;
-		std::unordered_map<BufferHandle, ID3D11Buffer*> m_BufferMap;
-		std::unordered_map<DepthStateHandle, ID3D11DepthStencilState*> m_DepthStencilStateMap;
-		std::unordered_map<RasterizerHandle, ID3D11RasterizerState*> m_RasterizerStateMap;
-		std::unordered_map<Handle, ID3D11BlendState*> m_BlendStateMap;
+		ID3D11Texture2D* backBufferTexture = nullptr;
 
 	private:
 		TextureHandle CreateTextureResource(ID3D11Texture2D* texture, TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter);
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> CreateRasterizer(RasterizerCullMode cullMode, RasterizerFillMode fillMode);
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> CreateDepthStencilState(DepthWriteMask write, DepthFunc func);
+		Microsoft::WRL::ComPtr<ID3D11BlendState> CreateBlendState(bool blendEnable);
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> CreateSamplerState(TextureFilter sampleMode);
+		Microsoft::WRL::ComPtr<ID3D11InputLayout> CreateInputLayout(Microsoft::WRL::ComPtr<ID3DBlob> vsBlob);
+		Microsoft::WRL::ComPtr<ID3D11VertexShader> LoadVertexShader(const std::string& vertexShaderSrc, Microsoft::WRL::ComPtr<ID3DBlob>& blob);
+		Microsoft::WRL::ComPtr<ID3D11PixelShader> LoadPixelShader(const std::string& pixelShaderSrc, Microsoft::WRL::ComPtr<ID3DBlob>& blob);
 	};
-
-	template <typename T>
-	T* D3D11ResourceProvider::GetResource(const Handle& h) {
-		T* resource = nullptr;
-		if (h.isNull()) return resource;
-
-		if (typeid(T) == typeid(Mesh)) {
-			if (!m_MeshMap.contains(h)) return resource;
-			resource = static_cast<T*>(static_cast<Resource*>(m_MeshMap[h].get()));
-		}
-		else if (typeid(T) == typeid(Shader)) {
-			if (!m_ShaderMap.contains(h)) return resource;
-			resource = static_cast<T*>(static_cast<Resource*>(m_ShaderMap[h].get()));
-		}
-		else if (typeid(T) == typeid(Texture)) {
-			if (!m_TextureMap.contains(h)) return resource;
-			resource = static_cast<T*>(static_cast<Resource*>(m_TextureMap[h].get()));
-		}
-
-		return resource;
-	}
 }

@@ -6,8 +6,7 @@
 #include"Editor/UI.h"
 
 #include<Renderer/D3D11/GraphicsDevice.h>
-#include<Renderer/D3D11/RenderContext.h>
-#include<Renderer/D3D11/ResourceProvider.h>
+#include<Renderer/Render/ResourceProviderInterface.h>
 #include<Renderer/Renderer.h>
 
 #include<entt/entt.hpp>
@@ -43,11 +42,10 @@ private:
 
 	zRender::Renderer renderer{};
 	std::unique_ptr<zRender::D3D11Device> graphicsDevice;
-	std::unique_ptr<zRender::D3D11ResourceProvider> resourceProvider;
-	std::unique_ptr<zRender::D3D11RenderContext> renderContext;
+	zRender::IRenderResourceProvider* resourceProvider;
+	ICommandContext* commandContext;
 
 private:
-	void CreatePipelines();
 	void CreateRenderPasses(int width, int height);
 	void RebuildRenderPass(int width, int height);
 	void Resize(int newWidth, int newHeight, bool fullscreen);

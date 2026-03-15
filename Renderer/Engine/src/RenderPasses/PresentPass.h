@@ -14,7 +14,7 @@ namespace zRender {
 
 		BufferHandle outputTextureBufferHandle;
 
-		PipelineStateContainer pipeline;
+		PipelineHandle pipelineHandle;
 	};
 
 	class PresentPass : public IRenderPass {
@@ -44,6 +44,6 @@ namespace zRender {
 
 		BufferHandle outputTextureBufferHandle;
 
-		PipelineStateContainer pipeline;
+		PipelineHandle pipelineHandle;
 	};
 }

@@ -2,6 +2,7 @@
 
 #include"Renderer/Core/Handles.h"
 #include"Renderer/Core/Helpers.h"
+#include"Renderer/Core/Resources.h"
 
 namespace zRender {
 
@@ -67,16 +68,34 @@ namespace zRender {
         DepthFunc_Greater,
         DepthFunc_GreaterEqual,
     };
+
+    struct PipelineDesc {
+        std::string& vertexShaderSrc;
+        std::string& pixelShaderSrc;
+
+        RasterizerFillMode rasterizerFillMode;
+        RasterizerCullMode rasterizerCullMode;
+
+        DepthWriteMask depthWriteMask;
+        DepthFunc depthFunc;
+
+        std::vector<TextureFilter> samplerFilterModes;
+    };
     
     class IRenderResourceProvider
     {
     public:
         virtual ~IRenderResourceProvider() = default;
 
+        virtual MeshHandle LoadMesh(const Mesh& rawMesh) = 0;
+        virtual TextureHandle LoadTexture(const Texture& rawTexture) = 0;
+
+        virtual TextureHandle CreateTexture(int width, int height, TextureUsageFlags usageFlags, TextureFilter filter, vec4 initialColor) = 0;
         virtual TextureHandle CreateTexture(int width, int height, TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter) = 0;
+
         virtual BufferHandle CreateBuffer(Buffer_Usage usage, int accessFlag, uint32_t byteWidth, void* initData) = 0;
-        virtual RasterizerHandle GetRasteriserHandle(RasterizerCullMode cullMode, RasterizerFillMode fillMode) = 0;
-        virtual DepthStateHandle GetDepthStateHandle(DepthWriteMask write, DepthFunc func) = 0;
+
+        virtual PipelineHandle CreatePipeline(const PipelineDesc& desc) = 0;
 
         TextureHandle GetScreenTextureHandle() { return screenTextureHandle; }
 
@@ -85,32 +104,11 @@ namespace zRender {
         ShaderHandle GetDefaultGeometryShaderHandle() { return geometryShaderHandle; };
         ShaderHandle GetDefaultLightingShaderHandle() { return lightingShaderHandle; };
 
-        void AddPipelineStateContainer(PipelineStateContainer state) { pipelineStates.push_back(state); }
-        PipelineStateContainer GetPipelineStateContainer(std::string name) {
-            for (auto& state : pipelineStates) {
-                if (state.name == name) return state;
-            }
-        }
-
-        void AddNamedResourceHandle(std::string name, Handle handle) { m_NamedResourceHandles.push_back({ name, handle }); }
-        Handle GetNamedResourceHandle(std::string name) {
-            for (auto& h : m_NamedResourceHandles) {
-                if (h.name == name) return h.handle;
-            }
-        }
-
     protected:
         TextureHandle screenTextureHandle;
-        std::vector<PipelineStateContainer> pipelineStates;
     private:
-        struct NamedResourceHandle {
-            std::string name;
-            Handle handle;
-        };
         ShaderHandle geometryShaderHandle;
         ShaderHandle lightingShaderHandle;
-
-        std::vector<NamedResourceHandle> m_NamedResourceHandles;
     };
 
 }

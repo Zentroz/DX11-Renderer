@@ -4,8 +4,8 @@
 
 namespace zRender {
 
-	void Renderer::Setup(IRenderContext* renderContext, IRenderResourceProvider* resourceProvider) {
-		this->m_RenderContext = renderContext;
+	void Renderer::Setup(ICommandContext* commandContext, IRenderResourceProvider* resourceProvider) {
+		this->m_CommandContext = commandContext;
 		this->resourceProvider = resourceProvider;
 	}
 
@@ -20,12 +20,12 @@ namespace zRender {
 	void Renderer::Shutdown() {}
 
 	void Renderer::InitRender() {
-		m_RenderContext->BeginFrame();
+		//m_RenderContext->BeginFrame();
 	}
 
 	void Renderer::Render() {
 		RenderPassContext ctx{
-			.ctx = m_RenderContext,
+			.cmdCtx = m_CommandContext,
 			.renderCamera = &renderCamera,
 			.lights = m_Lights,
 			.lightCount = lightCount,

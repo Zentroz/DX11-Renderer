@@ -46,13 +46,11 @@ VSOutput VSMain(VSInput input)
 }
 
 Texture2D diffuseTex : register(t0);
-SamplerState diffSampler : register(s0);
-
 Texture2D normalMap : register(t1);
-SamplerState normalSampler : register(s1);
-
 Texture2D ormMap : register(t2);
-SamplerState ormSampler : register(s2);
+
+SamplerState linearSampler : register(s0);
+SamplerState pointSampler : register(s1);
 
 struct GBufferOut
 {
@@ -66,14 +64,14 @@ GBufferOut PSMain(VSOutput input)
     GBufferOut o;
 
 	// Texture Sample
-    float4 diffuseSample = diffuseTex.Sample(diffSampler, input.uv);
+    float4 diffuseSample = diffuseTex.Sample(linearSampler, input.uv);
 
 	if (diffuseSample.a < aplhaCutoff)
 	{
 		discard;
 	}
 
-	float4 normalSample = normalMap.Sample(normalSampler, input.uv);
+	float4 normalSample = normalMap.Sample(pointSampler, input.uv);
 
 	// Properties
 	float3 diffuse = diffuseColor.rgb * diffuseSample.rgb;
@@ -102,7 +100,7 @@ GBufferOut PSMain(VSOutput input)
     // Writing G-Buffers
 	o.albedo = float4(GammaCorrection(diffuse, 1.1), 1);
 	o.normal = float4(normalWS, 1);
-	float4 material = ormMap.Sample(ormSampler, input.uv);
+	float4 material = ormMap.Sample(pointSampler, input.uv);
 	material.r = 1;
 	material.g = material.g * roughnessMultiplier;
 	material.b = material.b * metallicMultipler;

@@ -10,7 +10,7 @@ public:
 		Handle debugRT;
 		BufferHandle lightBufferHandle;
 		BufferHandle objectBufferHandle;
-		zRender::PipelineStateContainer pipeline;
+		PipelineHandle pipelineHandle;
 	};
 
 	struct LightBuffer {
@@ -29,5 +29,5 @@ private:
 	Handle debugRT;
 	BufferHandle lightBufferHandle;
 	BufferHandle objectBufferHandle;
-	zRender::PipelineStateContainer pipeline;
+	PipelineHandle pipelineHandle;
 };

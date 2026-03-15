@@ -6,6 +6,8 @@
 #include <comdef.h>
 #include <string>
 
+using namespace Microsoft::WRL;
+
 std::vector<std::vector<D3D11_INPUT_ELEMENT_DESC>> inputLayouts = {
 	{},
 	{
@@ -20,7 +22,8 @@ std::vector<std::vector<D3D11_INPUT_ELEMENT_DESC>> inputLayouts = {
 };
 
 namespace zRender {
-	D3D11ResourceProvider::D3D11ResourceProvider(D3D11Device* pDevice) : device(pDevice) {
+	D3D11ResourceProvider::D3D11ResourceProvider(ID3D11Device* pDevice, ID3D11Texture2D* backBufferTexture) : device(pDevice), backBufferTexture(backBufferTexture) {
+		/*
 		CreateRasterizer(RasterizerFunc_CullMode_None, RasterizerFunc_FillMode_Solid);
 		CreateRasterizer(RasterizerFunc_CullMode_Back, RasterizerFunc_FillMode_Solid);
 		CreateRasterizer(RasterizerFunc_CullMode_Front, RasterizerFunc_FillMode_Solid);
@@ -30,26 +33,27 @@ namespace zRender {
 		CreateDepthStencilState(DepthWriteMask_All, DepthFunc_Less);
 		CreateDepthStencilState(DepthWriteMask_Zero, DepthFunc_Less);
 		CreateDepthStencilState(DepthWriteMask_Zero, DepthFunc_Never);
-		screenTextureHandle = CreateTextureResource(device->GetBackBufferTexture(), TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget, TextureFilter::Linear);
+		*/
+		screenTextureHandle = CreateTextureResource(backBufferTexture, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget, TextureFilter::Linear);
 	}
 
 	void D3D11ResourceProvider::ReleaseScreenTexture() {
 		if (screenTextureHandle.isNull()) return;
 
-		m_TextureMap[screenTextureHandle]->Release();
-		m_TextureMap[screenTextureHandle] = nullptr;
+		storage.RemoveTexture(screenTextureHandle);
 	}
+	
 
 	void D3D11ResourceProvider::RecreateScreenTextureHandle() {
 		if (screenTextureHandle.isNull()) return;
 
-		uuid newId = CreateTextureResource(device->GetBackBufferTexture(), TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget, TextureFilter::Linear);
-		m_TextureMap[screenTextureHandle] = m_TextureMap[newId];
-		m_TextureMap.erase(newId);
+		uuid newId = CreateTextureResource(backBufferTexture, TextureFormat_RGBA8_UNorm, TextureUsageFlags::TextureUsageFlag_RenderTarget, TextureFilter::Linear);
+		screenTextureHandle = newId;
 	}
+	
 
 	MeshHandle D3D11ResourceProvider::LoadMesh(const Mesh& rawMesh) {
-		std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(rawMesh);
+		D3D11Mesh mesh{};
 
 		D3D11_BUFFER_DESC vDesc;
 		ZeroMemory(&vDesc, sizeof(vDesc));
@@ -63,7 +67,7 @@ namespace zRender {
 
 		HRESULT hr;
 
-		hr = device->GetDevice()->CreateBuffer(&vDesc, &initData, &mesh->vertexBuffer);
+		hr = device->CreateBuffer(&vDesc, &initData, mesh.vertexBuffer.GetAddressOf());
 
 		// Index buffer
 		D3D11_BUFFER_DESC ibDesc = {};
@@ -75,12 +79,14 @@ namespace zRender {
 		D3D11_SUBRESOURCE_DATA iinitData = {};
 		iinitData.pSysMem = rawMesh.indices.data();
 
-		hr = device->GetDevice()->CreateBuffer(&ibDesc, &iinitData, &mesh->indexBuffer);
+		hr = device->CreateBuffer(&ibDesc, &iinitData, mesh.indexBuffer.GetAddressOf());
 
-		mesh->vertexStride = sizeof(Vertex);
+		mesh.offset = 0;
+		mesh.strides = sizeof(Vertex);
 
+		/*
 		for (const auto& sub : rawMesh.subMeshes) {
-			mesh->subMeshesGPU.push_back({});
+			mesh.subMeshesGPU.push_back({});
 
 			SubMeshGPU& subMesh = mesh->subMeshesGPU.back();
 
@@ -90,10 +96,9 @@ namespace zRender {
 			subMesh.indexCount = sub.indexCount;
 			subMesh.indexOffset = sub.indexOffset;
 		}
+		*/
 
-		MeshHandle handle = uuid::Build();
-		m_MeshMap[handle] = mesh;
-		return handle;
+		return storage.AddMesh(mesh);
 	}
 
 	void LogShaderError(ID3DBlob* errBlob) {
@@ -134,64 +139,100 @@ namespace zRender {
 	};
 
 
-	ShaderHandle D3D11ResourceProvider::LoadShader(const Shader& rawShader) {
-		std::shared_ptr<Shader> shader = std::make_shared<Shader>(rawShader);
+	ComPtr<ID3D11VertexShader> D3D11ResourceProvider::LoadVertexShader(const std::string& vertexShaderSrc, ComPtr<ID3DBlob>& blob) {
+		ComPtr<ID3D11VertexShader> shader;
 
 		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
 		flags |= D3DCOMPILE_DEBUG;
 #endif
 
-		ID3DBlob* vsBlob = nullptr;
-		ID3DBlob* psBlob = nullptr;
 		ID3DBlob* errBlob = nullptr;
 
 		HRESULT hr;
 		IncludeHandler handler;
 		// VertexShader
 		hr = D3DCompile(
-			rawShader.vertexShaderSrc.c_str(),
-			rawShader.vertexShaderSrc.length(),
+			vertexShaderSrc.c_str(),
+			vertexShaderSrc.length(),
 			nullptr, nullptr, &handler,
 			"VSMain", "vs_5_0",
 			flags,
 			0,
-			&vsBlob, &errBlob
+			&blob, &errBlob
 		);
 
 		if (FAILEDLOG(hr)) {
 			LogShaderError(errBlob);
-			return uuid();
+			return nullptr;
 		}
+
+		hr = device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, shader.GetAddressOf());
+
+		if (FAILEDLOG(hr)) {
+			LogShaderError(errBlob);
+			return nullptr;
+		}
+
+		return shader;
+	}
+
+	ComPtr<ID3D11PixelShader> D3D11ResourceProvider::LoadPixelShader(const std::string& pixelShaderSrc, ComPtr<ID3DBlob>& blob) {
+		ComPtr<ID3D11PixelShader> shader;
+
+		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+		flags |= D3DCOMPILE_DEBUG;
+#endif
+
+		ID3DBlob* errBlob = nullptr;
+
+		HRESULT hr;
+		IncludeHandler handler;
 
 		// PixelShader
 		hr = D3DCompile(
-			rawShader.pixelShaderSrc.c_str(),
-			rawShader.pixelShaderSrc.length(),
+			pixelShaderSrc.c_str(),
+			pixelShaderSrc.length(),
 			nullptr, nullptr, &handler,
 			"PSMain", "ps_5_0",
 			flags,
 			0,
-			&psBlob, &errBlob
+			&blob, &errBlob
 		);
 
 		if (FAILEDLOG(hr)) {
 			LogShaderError(errBlob);
-			return uuid();
+			return nullptr;
 		}
 
-		hr = device->GetDevice()->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &shader->vertexShader);
-		hr = device->GetDevice()->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &shader->pixelShader);
+		hr = device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, shader.GetAddressOf());
 
-		if (rawShader.inputLayoutFlag != InputLayout_None) 
-			hr = device->GetDevice()->CreateInputLayout(inputLayouts[rawShader.inputLayoutFlag].data(), inputLayouts[rawShader.inputLayoutFlag].size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &shader->inputLayout);
+		if (FAILEDLOG(hr)) {
+			LogShaderError(errBlob);
+			return nullptr;
+		}
 
-		if (vsBlob) vsBlob->Release();
-		if (psBlob) psBlob->Release();
+		return shader;
+	}
 
-		ShaderHandle handle = uuid::Build();
-		m_ShaderMap[handle] = shader;
-		return handle;
+	ComPtr<ID3D11InputLayout> D3D11ResourceProvider::CreateInputLayout(ComPtr<ID3DBlob> vsBlob) {
+		ComPtr<ID3D11InputLayout> inputLayout;
+
+		D3D11_INPUT_ELEMENT_DESC elementDesc[] = {
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+
+		HRESULT hr = device->CreateInputLayout(elementDesc, _countof(elementDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), inputLayout.GetAddressOf());
+
+		if (FAILEDLOG(hr)) {
+			return nullptr;
+		}
+
+		return inputLayout;
 	}
 
 	TextureHandle D3D11ResourceProvider::LoadTexture(const Texture& rawTexture) {
@@ -216,7 +257,7 @@ namespace zRender {
 		initData.SysMemPitch = rawTexture.width * 4;
 		initData.SysMemSlicePitch = 0;
 
-		if (FAILEDLOG(device->GetDevice()->CreateTexture2D(&desc, &initData, &texture))) {
+		if (FAILEDLOG(device->CreateTexture2D(&desc, &initData, &texture))) {
 			return uuid();
 		}
 
@@ -225,7 +266,7 @@ namespace zRender {
 
 	// Order of Textures : 0 = +X, 1 = -X, 2 = +Y, 3 = -Y, 4 = +Z, 5 = -Z
 	TextureHandle D3D11ResourceProvider::LoadTextureCubeMap(const Texture textures[6]) {
-		std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+		D3D11Texture texture{};
 
 		D3D11_TEXTURE2D_DESC desc;
 		ZeroMemory(&desc, sizeof(desc));
@@ -267,22 +308,22 @@ namespace zRender {
 		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
 		HRESULT hr;
-		if (FAILEDLOG(hr = device->GetDevice()->CreateSamplerState(&sampDesc, &texture->samplerState))) {
+		/*
+		if (FAILEDLOG(hr = device->CreateSamplerState(&sampDesc, &texture->samplerState))) {
 			printf("FAILEDLOG to create sampler.");
 			return uuid();
 		}
-		if (FAILEDLOG(hr = device->GetDevice()->CreateTexture2D(&desc, subresources.data(), &texture->texture))) {
+		*/
+		if (FAILEDLOG(hr = device->CreateTexture2D(&desc, subresources.data(), texture.texture.GetAddressOf()))) {
 			printf("FAILEDLOG to create texture2d.");
 			return uuid();
 		}
-		if (FAILEDLOG(hr = device->GetDevice()->CreateShaderResourceView(texture->texture, &srvDesc, &texture->shaderResourceView))) {
+		if (FAILEDLOG(hr = device->CreateShaderResourceView(texture.texture.Get(), &srvDesc, texture.srv.GetAddressOf()))) {
 			printf("FAILEDLOG to create srv.");
 			return uuid();
 		}
 
-		TextureHandle handle = uuid::Build();
-		m_TextureMap[handle] = texture;
-		return handle;
+		return storage.AddTexture(texture);
 	}
 
 	BufferHandle D3D11ResourceProvider::CreateBuffer(zRender::Buffer_Usage usage, int accessFlags, UINT byteWidth, void* initData) {
@@ -303,20 +344,9 @@ namespace zRender {
 		D3D11_SUBRESOURCE_DATA initialData;
 		initialData.pSysMem = initData;
 
-		device->GetDevice()->CreateBuffer(&desc, &initialData, &constantBuffer);
+		device->CreateBuffer(&desc, &initialData, &constantBuffer);
 
-		BufferHandle h = uuid::Build();
-		m_BufferMap[h] = constantBuffer;
-		return h;
-	}
-
-	ID3D11Buffer* D3D11ResourceProvider::GetBuffer(BufferHandle h) {
-		if (!m_BufferMap.contains(h)) return nullptr;
-		return m_BufferMap[h];
-	}
-
-	ID3D11RasterizerState* D3D11ResourceProvider::GetRasterizerState(RasterizerHandle h) {
-		return m_RasterizerStateMap[h];
+		return storage.AddBuffer(constantBuffer);
 	}
 
 	ID3D11DepthStencilView* D3D11ResourceProvider::CreateDepthStencilView() {
@@ -350,46 +380,6 @@ namespace zRender {
 		}
 
 		return D3D11_COMPARISON_LESS_EQUAL;
-	}
-
-	DepthStateHandle D3D11ResourceProvider::CreateDepthStencilState(DepthWriteMask write, DepthFunc func) {
-		ID3D11DepthStencilState* state;
-
-		D3D11_DEPTH_STENCIL_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		desc.DepthEnable = TRUE;
-		desc.DepthWriteMask = MyDepthMaskToDx(write);
-		desc.DepthFunc = MyDepthFuncToDx(func);
-		desc.StencilEnable = FALSE;
-
-		device->GetDevice()->CreateDepthStencilState(&desc, &state);
-
-		DepthStateHandle h = uuid::Build();
-		m_DepthStencilStateMap[h] = state;
-		return h;
-	}
-
-	DepthStateHandle D3D11ResourceProvider::GetDepthStateHandle(DepthWriteMask write, DepthFunc function) {
-		D3D11_DEPTH_WRITE_MASK mask = MyDepthMaskToDx(write);
-		D3D11_COMPARISON_FUNC func = MyDepthFuncToDx(function);
-
-		for (const auto& [key, val] : m_DepthStencilStateMap) {
-
-			D3D11_DEPTH_STENCIL_DESC desc;
-			val->GetDesc(&desc);
-
-			if (desc.DepthFunc == func && desc.DepthWriteMask == mask) {
-				return key;
-			}
-		}
-
-		return uuid();
-	}
-
-	ID3D11DepthStencilState* D3D11ResourceProvider::GetDepthStencilState(DepthStateHandle h) {
-		if (!m_DepthStencilStateMap.contains(h) || h == uuid()) return nullptr;
-
-		return m_DepthStencilStateMap[h];
 	}
 
 	DXGI_FORMAT MyTextureFormatToDX11(zRender::TextureFormat format) {
@@ -469,7 +459,7 @@ namespace zRender {
 		initData.SysMemPitch = width * 4;
 		initData.SysMemSlicePitch = 0;
 
-		if (FAILEDLOG(device->GetDevice()->CreateTexture2D(&desc, &initData, &texture))) {
+		if (FAILEDLOG(device->CreateTexture2D(&desc, &initData, &texture))) {
 			printf("FAILEDLOG to create texture2d.");
 			return uuid();
 		}
@@ -501,7 +491,7 @@ namespace zRender {
 		}
 		desc.BindFlags = bindFlags;
 
-		HRESULT hr = device->GetDevice()->CreateTexture2D(&desc, nullptr, &texture);
+		HRESULT hr = device->CreateTexture2D(&desc, nullptr, &texture);
 
 		if (FAILEDLOG(hr)) {
 			printf("FAILEDLOG to create texture2d.");
@@ -512,21 +502,9 @@ namespace zRender {
 	}
 
 	TextureHandle D3D11ResourceProvider::CreateTextureResource(ID3D11Texture2D* texture, TextureFormat format, TextureUsageFlags usageFlags, TextureFilter filter) {
-		std::shared_ptr<Texture> tex = std::make_shared<Texture>();
-		tex->texture = texture;
-
-		D3D11_SAMPLER_DESC sampDesc;
-		ZeroMemory(&sampDesc, sizeof(sampDesc));
-		sampDesc.Filter = (filter == TextureFilter::Point) ? D3D11_FILTER_MIN_MAG_MIP_POINT : D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-
-		if (FAILEDLOG(device->GetDevice()->CreateSamplerState(&sampDesc, &tex->samplerState))) {
-			printf("FAILEDLOG to create sampler.");
-			return uuid();
-		}
+		D3D11Texture tex{};
+		tex.texture = texture;
+		texture->GetDesc(&tex.desc);
 
 		bool createRTV = HasFlag(usageFlags, TextureUsageFlags::TextureUsageFlag_RenderTarget);
 		bool createSRV = HasFlag(usageFlags, TextureUsageFlags::TextureUsageFlag_ShaderResource);
@@ -550,34 +528,25 @@ namespace zRender {
 		HRESULT hr;
 
 		if (createSRV) {
-			if (FAILEDLOG(hr = device->GetDevice()->CreateShaderResourceView(texture, &srvDesc, &tex->shaderResourceView))) {
+			if (FAILEDLOG(hr = device->CreateShaderResourceView(texture, &srvDesc, tex.srv.GetAddressOf()))) {
 				printf("FAILEDLOG to create srv.");
 				return uuid();
 			}
 		}
 		if (createRTV) {
-			if (FAILEDLOG(device->GetDevice()->CreateRenderTargetView(texture, nullptr, &tex->renderTargetView))) {
+			if (FAILEDLOG(device->CreateRenderTargetView(texture, nullptr, tex.rtv.GetAddressOf()))) {
 				printf("FAILEDLOG to create rtv.");
 				return uuid();
 			}
 		}
 		if (createDSV) {
-			if (FAILEDLOG(device->GetDevice()->CreateDepthStencilView(texture, depthTexture ? &dsvDesc : nullptr, &tex->depthStencilView))) {
+			if (FAILEDLOG(device->CreateDepthStencilView(texture, depthTexture ? &dsvDesc : nullptr, tex.dsv.GetAddressOf()))) {
 				printf("FAILEDLOG to create dsv.");
 				return uuid();
 			}
 		}
 
-		TextureHandle h = uuid::Build();
-		m_TextureMap[h] = tex;
-		return h;
-	}
-
-	void D3D11ResourceProvider::DestroyTexture(const uuid& id) {
-		if (!m_TextureMap.contains(id)) return;
-		m_TextureMap[id]->Release();
-		
-		m_TextureMap.erase(id);
+		return storage.AddTexture(tex);
 	}
 
 	D3D11_CULL_MODE MyCullToD3D11(zRender::RasterizerCullMode mode) {
@@ -602,8 +571,8 @@ namespace zRender {
 		return D3D11_FILL_SOLID;
 	}
 
-	RasterizerHandle D3D11ResourceProvider::CreateRasterizer(zRender::RasterizerCullMode cullMode, zRender::RasterizerFillMode fillMode) {
-		ID3D11RasterizerState* state = nullptr;
+	ComPtr<ID3D11RasterizerState> D3D11ResourceProvider::CreateRasterizer(zRender::RasterizerCullMode cullMode, zRender::RasterizerFillMode fillMode) {
+		ComPtr<ID3D11RasterizerState> state = nullptr;
 
 		D3D11_RASTERIZER_DESC desc;
 		ZeroMemory(&desc, sizeof(desc));
@@ -614,31 +583,28 @@ namespace zRender {
 		desc.FrontCounterClockwise = FALSE;
 		desc.DepthClipEnable = TRUE;
 
-		device->GetDevice()->CreateRasterizerState(&desc, &state);
+		device->CreateRasterizerState(&desc, &state);
 
-		RasterizerHandle h = uuid::Build();
-		m_RasterizerStateMap[h] = state;
-		return h;
+		return state;
 	}
 
-	RasterizerHandle D3D11ResourceProvider::GetRasteriserHandle(zRender::RasterizerCullMode cullMode, zRender::RasterizerFillMode fillMode) {
-		D3D11_CULL_MODE dxCull = MyCullToD3D11(cullMode);
-		D3D11_FILL_MODE dxFill = MyFillToD3D11(fillMode);
+	ComPtr<ID3D11DepthStencilState> D3D11ResourceProvider::CreateDepthStencilState(DepthWriteMask write, DepthFunc func) {
+		ComPtr<ID3D11DepthStencilState> state;
 
-		for (const auto& [key, val] : m_RasterizerStateMap) {
-			D3D11_RASTERIZER_DESC desc;
-			val->GetDesc(&desc);
+		D3D11_DEPTH_STENCIL_DESC desc;
+		ZeroMemory(&desc, sizeof(desc));
+		desc.DepthEnable = TRUE;
+		desc.DepthWriteMask = MyDepthMaskToDx(write);
+		desc.DepthFunc = MyDepthFuncToDx(func);
+		desc.StencilEnable = FALSE;
 
-			if (desc.CullMode == dxCull && desc.FillMode == dxFill) {
-				return key;
-			}
-		}
+		device->CreateDepthStencilState(&desc, &state);
 
-		return uuid();
+		return state;
 	}
 
-	Handle D3D11ResourceProvider::CreateBlendState(bool blendEnable) {
-		ID3D11BlendState* state = nullptr;
+	ComPtr<ID3D11BlendState> D3D11ResourceProvider::CreateBlendState(bool blendEnable) {
+		ComPtr<ID3D11BlendState> state = nullptr;
 
 		D3D11_BLEND_DESC desc{};
 		ZeroMemory(&desc, sizeof(D3D11_BLEND_DESC));
@@ -657,17 +623,53 @@ namespace zRender {
 			desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 		}
 
-		HRESULT hr = device->GetDevice()->CreateBlendState(&desc, &state);
+		HRESULT hr = device->CreateBlendState(&desc, &state);
 		FAILEDLOG(hr);
 		assert(SUCCEEDED(hr));
 
-		Handle h = uuid::Build();
-		m_BlendStateMap[h] = state;
-		return h;
+		return state;
 	}
 
-	ID3D11BlendState* D3D11ResourceProvider::GetBlendState(Handle handle) {
-		if (!m_BlendStateMap.contains(handle)) return nullptr;
-		return m_BlendStateMap[handle];
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> D3D11ResourceProvider::CreateSamplerState(TextureFilter sampleMode) {
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+
+		D3D11_SAMPLER_DESC desc{};
+		desc.Filter = (sampleMode == TextureFilter::Linear) ? D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR : D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+		device->CreateSamplerState(&desc, samplerState.GetAddressOf());
+
+		return samplerState;
+	}
+
+	PipelineHandle D3D11ResourceProvider::CreatePipeline(const PipelineDesc& desc) {
+		D3D11Pipeline pipeline;
+
+		pipeline.topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+		ComPtr<ID3DBlob> vsBlob;
+		ComPtr<ID3DBlob> psBlob;
+		pipeline.vertexShader = LoadVertexShader(desc.vertexShaderSrc, vsBlob);
+		pipeline.pixelShader = LoadPixelShader(desc.pixelShaderSrc, psBlob);
+
+		pipeline.inputLayout = CreateInputLayout(vsBlob.Get());
+
+		pipeline.rasterizerState = CreateRasterizer(desc.rasterizerCullMode, desc.rasterizerFillMode);
+		pipeline.depthStencilState = CreateDepthStencilState(desc.depthWriteMask, desc.depthFunc);
+
+		pipeline.samplerStates.resize(16);
+		for (size_t i = 0; i < 16; i++) {
+			if (i >= desc.samplerFilterModes.size()) {
+				pipeline.samplerStates[i] = nullptr;
+				continue;
+			}
+
+			pipeline.samplerStates[i] = CreateSamplerState(desc.samplerFilterModes[i]);
+		}
+
+		return storage.AddPipeline(pipeline);
 	}
 }

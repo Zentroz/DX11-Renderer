@@ -5,7 +5,7 @@
 #include"Renderer/Core/Math.h"
 #include"Renderer/Render/Camera.h"
 #include"Renderer/Render/RenderItem.h"
-#include"Renderer/Render/RenderContextInterface.h"
+#include"Renderer/Render/CommandContextInterface.h"
 #include"Renderer/Render/ResourceProviderInterface.h"
 #include"Renderer/Render/RenderConstantBuffers.h"
 #include"Renderer/Render/RenderGraph.h"
@@ -19,7 +19,7 @@ namespace zRender {
 
 		void Queue(RenderItem item);
 
-		void Setup(IRenderContext* renderContext, IRenderResourceProvider* resourceProvider);
+		void Setup(ICommandContext* commandContext, IRenderResourceProvider* resourceProvider);
 		void SetCamera(Camera& cam);
 		void SetScreenSize(int width, int height);
 		void AddLight(Light light);
@@ -40,7 +40,7 @@ namespace zRender {
 		std::vector<RenderItem> m_RenderQueueAplhaTest;
 		std::vector<RenderItem> m_RenderQueueTransparent;
 		IRenderResourceProvider* resourceProvider;
-		IRenderContext* m_RenderContext;
+		ICommandContext* m_CommandContext;
 
 		Camera renderCamera;
 		Light m_Lights[8];

@@ -12,7 +12,7 @@ namespace zRender {
 		backgroundTextureHandle(input.backgroundTextureHandle),
 		screenTextureHandle(input.screenTextureHandle),
 		outputTextureBufferHandle(input.outputTextureBufferHandle),
-		pipeline(input.pipeline)
+		pipelineHandle(input.pipelineHandle)
 	{}
 
 	RenderPassDesc PresentPass::GetDesc() const {
@@ -37,11 +37,13 @@ namespace zRender {
 			.paddings = {0, 0, 0}
 		};
 
-		ctx.ctx->UpdateBuffer(outputTextureBufferHandle, sizeof(OuputConstantBuffer), &outputData);
+		ctx.cmdCtx->SetViewport(ctx.renderCamera->width, ctx.renderCamera->height);
 
-		ctx.ctx->BindBufferPS(3, outputTextureBufferHandle);
+		ctx.cmdCtx->UpdateBuffer(outputTextureBufferHandle, sizeof(OuputConstantBuffer), &outputData);
 
-		ctx.ctx->BindPipeline(pipeline);
-		ctx.ctx->Draw(3);
+		ctx.cmdCtx->SetBufferPS(outputTextureBufferHandle, 3);
+
+		ctx.cmdCtx->SetPipeline(pipelineHandle);
+		ctx.cmdCtx->Draw(3, 0);
 	}
 }

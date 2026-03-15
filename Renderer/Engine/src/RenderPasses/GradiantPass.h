@@ -7,7 +7,7 @@
 namespace zRender {
 	struct GradiantPassInput {
 		Handle outputTextureHandle;
-		PipelineStateContainer pipeline;
+		PipelineHandle pipelineHandle;
 	};
 
 	class GradiantPass : public IRenderPass {
@@ -20,6 +20,6 @@ namespace zRender {
 
 	private:
 		Handle outputTextureHandle;
-		PipelineStateContainer pipeline;
+		PipelineHandle pipelineHandle;
 	};
 }

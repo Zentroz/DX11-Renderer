@@ -20,7 +20,7 @@ namespace zRender {
 			BufferHandle lightBufferHandle;
 			BufferHandle matricesBufferHandle;
 
-			PipelineStateContainer pipeline;
+			PipelineHandle pipelineHandle;
 		};
 
 		struct LightPassShaderData {
@@ -48,6 +48,6 @@ namespace zRender {
 		BufferHandle lightBufferHandle;
 		BufferHandle matricesBufferHandle;
 
-		PipelineStateContainer pipeline;
+		PipelineHandle pipelineHandle;
 	};
 }
